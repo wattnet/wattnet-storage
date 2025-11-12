@@ -1,0 +1,30 @@
+services:
+    victoria-metrics:
+        image: victoriametrics/victoria-metrics:v1.117.1
+        container_name: victoria-metrics
+        volumes:
+            - victoria_data:/storage:rw
+        command: >
+            -storageDataPath=/storage
+            -retentionPeriod=1200
+        network_mode: host # 8428
+        restart: unless-stopped
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        volumes:
+            - grafana_data:/var/lib/grafana:rw
+            - ./config/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/provisioning-datasources.yaml:ro
+            - ./config/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/provisioning-dashboards.yaml:ro
+            - ./config/dashboards:/var/lib/grafana/dashboards:ro
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        network_mode: host # 3000
+        restart: unless-stopped
+        depends_on:
+            - victoria-metrics
+
+volumes:
+    victoria_data:
+    grafana_data:

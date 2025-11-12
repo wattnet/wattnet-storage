@@ -1,0 +1,467 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": 5,
+	"links": [],
+	"panels": [
+		{
+			"collapsed": false,
+			"gridPos": {
+				"h": 1,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			},
+			"id": 3,
+			"panels": [],
+			"repeat": "factor_type",
+			"title": "$factor_type",
+			"type": "row"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 5,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": false,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 12,
+				"w": 24,
+				"x": 0,
+				"y": 1
+			},
+			"id": 1,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "table",
+					"placement": "right",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "11.5.2",
+			"targets": [
+				{
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "factor{factor_type=~\"$factor_type\", scope=~\"$scope\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"legendFormat": "{{production_type}} ({{scope}})",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$factor_type Values",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "thresholds"
+					},
+					"custom": {
+						"align": "auto",
+						"cellOptions": {
+							"type": "auto",
+							"wrapText": false
+						},
+						"inspect": false
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "#ffffff",
+								"value": null
+							}
+						]
+					}
+				},
+				"overrides": [
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Production Type"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 178
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Value"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 241
+							},
+							{
+								"id": "custom.align",
+								"value": "right"
+							},
+							{
+								"id": "custom.cellOptions",
+								"value": {
+									"type": "auto",
+									"wrapText": true
+								}
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Unit"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 89
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Source"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 247
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Year"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 29
+							},
+							{
+								"id": "mappings",
+								"value": [
+									{
+										"options": {
+											"None": {
+												"color": "#808080",
+												"index": 0,
+												"text": "None"
+											}
+										},
+										"type": "value"
+									}
+								]
+							},
+							{
+								"id": "custom.cellOptions",
+								"value": {
+									"type": "color-text",
+									"wrapText": false
+								}
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Source Link"
+						},
+						"properties": [
+							{
+								"id": "color",
+								"value": {
+									"fixedColor": "light-blue",
+									"mode": "fixed"
+								}
+							},
+							{
+								"id": "custom.cellOptions",
+								"value": {
+									"type": "color-text",
+									"wrapText": false
+								}
+							},
+							{
+								"id": "mappings",
+								"value": [
+									{
+										"options": {
+											"None": {
+												"color": "#808080",
+												"index": 0,
+												"text": "None"
+											}
+										},
+										"type": "value"
+									}
+								]
+							},
+							{
+								"id": "custom.width",
+								"value": 690
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "app"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 105
+							}
+						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "scope"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 163
+							}
+						]
+					}
+				]
+			},
+			"gridPos": {
+				"h": 17,
+				"w": 24,
+				"x": 0,
+				"y": 13
+			},
+			"id": 2,
+			"interval": "15m",
+			"options": {
+				"cellHeight": "sm",
+				"footer": {
+					"countRows": false,
+					"fields": "",
+					"reducer": ["sum"],
+					"show": false
+				},
+				"showHeader": true,
+				"sortBy": []
+			},
+			"pluginVersion": "11.5.2",
+			"targets": [
+				{
+					"disableTextWrap": false,
+					"editorMode": "builder",
+					"exemplar": false,
+					"expr": "factor{factor_type=~\"$factor_type\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"instant": false,
+					"legendFormat": "{{production_type}}",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$factor_type Information",
+			"transformations": [
+				{
+					"id": "timeSeriesTable",
+					"options": {
+						"A": {
+							"timeField": "Time"
+						}
+					}
+				},
+				{
+					"id": "organize",
+					"options": {
+						"excludeByName": {
+							"__name__": true,
+							"factor_type": true,
+							"instance": true,
+							"job": true
+						},
+						"includeByName": {},
+						"indexByName": {
+							"Trend #A": 5,
+							"__name__": 0,
+							"factor_type": 1,
+							"instance": 2,
+							"job": 3,
+							"production_type": 4,
+							"source": 7,
+							"source_link": 9,
+							"unit": 6,
+							"year": 8
+						},
+						"renameByName": {
+							"Trend #A": "Value",
+							"production_type": "Production Type",
+							"source": "Source",
+							"source_link": "Source Link",
+							"unit": "Unit",
+							"year": "Year"
+						}
+					}
+				}
+			],
+			"transparent": true,
+			"type": "table"
+		}
+	],
+	"preload": false,
+	"refresh": "",
+	"schemaVersion": 40,
+	"tags": ["wattnet", "factors"],
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"text": ["CO2", "Water"],
+					"value": ["CO2", "Water"]
+				},
+				"definition": "label_values(factor,factor_type)",
+				"includeAll": true,
+				"label": "Factor Type",
+				"multi": true,
+				"name": "factor_type",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(factor,factor_type)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": ["$__all"]
+				},
+				"definition": "label_values(factor,scope)",
+				"includeAll": true,
+				"label": "Factor Scope",
+				"multi": true,
+				"name": "scope",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(factor,scope)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			}
+		]
+	},
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "utc",
+	"title": "wattnet factors",
+	"uid": "feh6mxfjz5ssgd",
+	"version": 1,
+	"weekStart": ""
+}

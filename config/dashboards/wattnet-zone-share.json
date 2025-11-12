@@ -1,0 +1,479 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": 5,
+	"links": [],
+	"panels": [
+		{
+			"collapsed": false,
+			"gridPos": {
+				"h": 1,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			},
+			"id": 2,
+			"panels": [],
+			"repeat": "zone",
+			"title": "$zone",
+			"type": "row"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"fillOpacity": 80,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"lineWidth": 1,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"max": 100,
+					"min": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unit": "percent"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 19,
+				"w": 8,
+				"x": 0,
+				"y": 1
+			},
+			"id": 1,
+			"interval": "15m",
+			"options": {
+				"barRadius": 0,
+				"barWidth": 0.66,
+				"fullHighlight": false,
+				"groupWidth": 0.69,
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"orientation": "vertical",
+				"showValue": "always",
+				"stacking": "normal",
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				},
+				"xTickLabelRotation": 0,
+				"xTickLabelSpacing": 0
+			},
+			"pluginVersion": "11.5.2",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "flow_share{zone=~\"$zone\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"interval": "15m",
+					"legendFormat": "{{target}}",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$zone Flow Share (Distribution Vector) (Percentage)",
+			"transparent": true,
+			"type": "barchart"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"fillOpacity": 80,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"lineWidth": 1,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"max": 100,
+					"min": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unit": "percent"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 19,
+				"w": 8,
+				"x": 8,
+				"y": 1
+			},
+			"id": 4,
+			"interval": "15m",
+			"options": {
+				"barRadius": 0,
+				"barWidth": 0.66,
+				"fullHighlight": false,
+				"groupWidth": 0.69,
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"orientation": "vertical",
+				"showValue": "always",
+				"stacking": "normal",
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				},
+				"xTickLabelRotation": 0,
+				"xTickLabelSpacing": 0
+			},
+			"pluginVersion": "11.5.2",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "mix_share{zone=~\"$zone\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"interval": "15m",
+					"legendFormat": " {{source}}",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$zone Mix Share (Composition Vector) (Percentage)",
+			"transparent": true,
+			"type": "barchart"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": false,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 10,
+				"w": 8,
+				"x": 16,
+				"y": 1
+			},
+			"id": 3,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "11.5.2",
+			"repeat": "footprint_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "footprint_share{zone=~\"$zone\", footprint_type=~\"$footprint_type\", scope=~\"$scope\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"interval": "15m",
+					"legendFormat": "{{source}} → {{zone}}: {{scope}} {{footprint_type}} footprint ({{unit}})",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$zone Global $footprint_type Footprint Composition (Value)",
+			"transparent": true,
+			"type": "timeseries"
+		}
+	],
+	"preload": false,
+	"refresh": "",
+	"schemaVersion": 40,
+	"tags": [
+		"wattnet",
+		"zone",
+		"distribution",
+		"percentage",
+		"footprints",
+		"local",
+		"share",
+		"flows",
+		"mix",
+		"composition",
+		"global"
+	],
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(footprint_share,zone)",
+				"includeAll": true,
+				"label": "Zone",
+				"multi": true,
+				"name": "zone",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(footprint_share,zone)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(footprint_share,footprint_type)",
+				"includeAll": true,
+				"label": "Footprint Type",
+				"multi": true,
+				"name": "footprint_type",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(footprint_share,footprint_type)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": [""],
+					"value": [""]
+				},
+				"definition": "label_values(footprint_share,scope)",
+				"includeAll": true,
+				"label": "Footprint Scope",
+				"multi": true,
+				"name": "scope",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(footprint_share,scope)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": [""],
+					"value": [""]
+				},
+				"definition": "label_values(footprint_share,valid)",
+				"includeAll": true,
+				"label": "Valid",
+				"multi": true,
+				"name": "valid",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(footprint_share,valid)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 1,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": [""],
+					"value": [""]
+				},
+				"definition": "label_values(footprint_share,zone_status)",
+				"includeAll": true,
+				"label": "Zone Status",
+				"multi": true,
+				"name": "zone_status",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(footprint_share,zone_status)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 1,
+				"regex": "",
+				"type": "query"
+			}
+		]
+	},
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "utc",
+	"title": "wattnet zone share",
+	"uid": "aevihxu0q8740c",
+	"version": 1,
+	"weekStart": ""
+}

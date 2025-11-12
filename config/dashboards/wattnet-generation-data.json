@@ -1,0 +1,272 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": 3,
+	"links": [],
+	"panels": [
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic-by-name"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 0,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": false,
+						"lineInterpolation": "smooth",
+						"lineStyle": {
+							"fill": "solid"
+						},
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unit": "megwatt"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 13,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			},
+			"id": 4,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "right",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "11.5.2",
+			"repeat": "production_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "zone_generation{production_type=~\"$production_type\", zone=~\"$zone\", data_state=~\"$data_state\", datasource=~\"$datasource\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"legendFormat": "{{zone}}",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "$production_type",
+			"transparent": true,
+			"type": "timeseries"
+		}
+	],
+	"preload": false,
+	"refresh": "",
+	"schemaVersion": 40,
+	"tags": ["wattnet", "raw", "generation", "production"],
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,zone)",
+				"includeAll": true,
+				"label": "Zone",
+				"multi": true,
+				"name": "zone",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,zone)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,production_type)",
+				"includeAll": true,
+				"label": "Production Type",
+				"multi": true,
+				"name": "production_type",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,production_type)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,valid)",
+				"includeAll": true,
+				"label": "Valid",
+				"multi": true,
+				"name": "valid",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,valid)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,zone_status)",
+				"includeAll": true,
+				"label": "Zone Status",
+				"multi": true,
+				"name": "zone_status",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,zone_status)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,data_state)",
+				"includeAll": true,
+				"label": "Data State",
+				"multi": true,
+				"name": "data_state",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,data_state)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(zone_generation,datasource)",
+				"includeAll": true,
+				"label": "Datasource",
+				"multi": true,
+				"name": "datasource",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(zone_generation,datasource)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			}
+		]
+	},
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "utc",
+	"title": "wattnet generation data",
+	"uid": "eeh7e3e7qggzka",
+	"version": 1,
+	"weekStart": ""
+}

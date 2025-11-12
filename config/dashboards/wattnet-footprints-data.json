@@ -1,0 +1,470 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"id": 1,
+	"links": [],
+	"panels": [
+		{
+			"collapsed": false,
+			"gridPos": {
+				"h": 1,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			},
+			"id": 2,
+			"panels": [],
+			"repeat": "zone",
+			"title": "$zone",
+			"type": "row"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "continuous-GrYlRd"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "scheme",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": false,
+						"lineInterpolation": "linear",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 8,
+				"x": 0,
+				"y": 1
+			},
+			"id": 1,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "table",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "11.5.2",
+			"repeat": "footprint_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "local_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} local footprint ({{unit}})",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "Local $footprint_type Footprint ($scope scope)",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "continuous-GrYlRd"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "scheme",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": false,
+						"lineInterpolation": "linear",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 8,
+				"x": 8,
+				"y": 1
+			},
+			"id": 3,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "table",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "11.5.2",
+			"repeat": "footprint_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "global_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"interval": "15m",
+					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} global footprint ({{unit}})",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				}
+			],
+			"title": "Global $footprint_type Footprint ($scope scope)",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "prometheus",
+				"uid": "P4169E866C3094E38"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic-by-name"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"fillOpacity": 80,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"lineWidth": 1,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 8,
+				"x": 16,
+				"y": 1
+			},
+			"id": 4,
+			"interval": "15m",
+			"options": {
+				"barRadius": 0,
+				"barWidth": 1,
+				"fullHighlight": false,
+				"groupWidth": 0.38,
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"orientation": "auto",
+				"showValue": "auto",
+				"stacking": "none",
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				},
+				"xTickLabelRotation": 0,
+				"xTickLabelSpacing": 100
+			},
+			"pluginVersion": "11.5.2",
+			"repeat": "footprint_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "local_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
+					"fullMetaSearch": false,
+					"includeNullMetadata": true,
+					"legendFormat": "{{zone}}: {{scope}}{{footprint_type}} local footprint ({{unit}})",
+					"range": true,
+					"refId": "A",
+					"useBackend": false
+				},
+				{
+					"datasource": {
+						"type": "prometheus",
+						"uid": "PAE45454D0EDB9216"
+					},
+					"disableTextWrap": false,
+					"editorMode": "code",
+					"expr": "global_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
+					"fullMetaSearch": false,
+					"hide": false,
+					"includeNullMetadata": true,
+					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} global footprint ({{unit}})",
+					"range": true,
+					"refId": "B",
+					"useBackend": false
+				}
+			],
+			"title": "Comparison $footprint_type Footprint ($scope scope)",
+			"transparent": true,
+			"type": "barchart"
+		}
+	],
+	"preload": false,
+	"refresh": "",
+	"schemaVersion": 40,
+	"tags": ["wattnet", "footprints", "local", "global"],
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(local_footprint,zone)",
+				"includeAll": true,
+				"label": "Zone",
+				"multi": true,
+				"name": "zone",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(local_footprint,zone)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(local_footprint,footprint_type)",
+				"includeAll": true,
+				"label": "Footprint Type",
+				"multi": true,
+				"name": "footprint_type",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(local_footprint,footprint_type)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": ["All"],
+					"value": ["$__all"]
+				},
+				"definition": "label_values(local_footprint,scope)",
+				"includeAll": true,
+				"label": "Footprint Scope",
+				"multi": true,
+				"name": "scope",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(local_footprint,scope)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(local_footprint,valid)",
+				"includeAll": true,
+				"label": "Valid",
+				"multi": true,
+				"name": "valid",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(local_footprint,valid)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"definition": "label_values(local_footprint,zone_status)",
+				"includeAll": true,
+				"label": "Zone Status",
+				"multi": true,
+				"name": "zone_status",
+				"options": [],
+				"query": {
+					"qryType": 1,
+					"query": "label_values(local_footprint,zone_status)",
+					"refId": "PrometheusVariableQueryEditor-VariableQuery"
+				},
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			}
+		]
+	},
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "utc",
+	"title": "wattnet footprints data",
+	"uid": "ceh76nxs701s0f",
+	"version": 1,
+	"weekStart": ""
+}

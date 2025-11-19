@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "wattnet-storage"
+version = "1.0.0"
+description = "Storage Client for wattnet"
+authors = ["Jaime Iglesias Blanco <iglesias@ifca.unican.es>"]
+readme = "README.md"
+homepage = "https://wattnet.eu"
+repository = "https://github.com/wattnet/wattnet-storage"
+packages = [{ include = "wattnet" }]
+include = ["config/.env.example"]
+
+[tool.poetry.plugins."wattnet.storage.clients"]
+victoriametrics = "wattnet.storage.clients.plugins.victoriametrics:VictoriaMetricsStorageClient"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+pydantic-settings = "2.12.0"
+stevedore = "5.5.0"
+prometheus-api-client = "0.6.0"
+requests = "2.32.5"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

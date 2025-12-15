@@ -1,14 +1,14 @@
 services:
-    victoria-metrics:
-        image: victoriametrics/victoria-metrics:v1.117.1
-        container_name: victoria-metrics
+    clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        container_name: clickhouse
+        ports:
+            - "8123:8123" # HTTP interface
+            - "9000:9000" # Native TCP interface
         volumes:
-            - victoria_data:/storage:rw
-        command: >
-            -storageDataPath=/storage
-            -retentionPeriod=1200
-        network_mode: host # 8428
-        restart: unless-stopped
+            - clickhouse_data:/var/lib/clickhouse/
+            - clickhouse_logs:/var/log/clickhouse-server/
+            - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d:ro
 
     grafana:
         image: grafana/grafana:latest
@@ -20,11 +20,11 @@ services:
             - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
         environment:
             - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
         network_mode: host # 3000
         restart: unless-stopped
-        depends_on:
-            - victoria-metrics
 
 volumes:
-    victoria_data:
+    clickhouse_data:
+    clickhouse_logs:
     grafana_data:

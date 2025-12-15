@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     storage_db_url: str = "http://localhost:8428"
     timeseries_step_minutes: int = 15  # minutes between data points
 
+    # ClickHouse Settings
+    clickhouse_host: str = "localhost"
+    clickhouse_port: int = 9000
+    clickhouse_user: str = "default"
+    clickhouse_password: str = ""
+    database: str = "wattnet"
+
     # Logging Settings
     log_level: str = "INFO"
     log_handlers: list[str] = ["console"]  # Possible values: "console", "file"

@@ -11,6 +11,7 @@ include = ["config/.env.example"]
 
 [tool.poetry.plugins."wattnet.storage.clients"]
 victoriametrics = "wattnet.storage.clients.plugins.victoriametrics:VictoriaMetricsStorageClient"
+clickhouse = "wattnet.storage.clients.plugins.clickhouse:ClickHouseClient"
 
 [tool.poetry.dependencies]
 python = ">=3.10"

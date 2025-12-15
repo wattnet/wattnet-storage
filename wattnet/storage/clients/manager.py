@@ -44,15 +44,26 @@ class StorageClientsManager:
             self.storage_clients[client_name] = client_plugin()
         LOG.info("Storage Client loaded: %s " % ",".join(self.storage_clients.keys()))
 
-    def read_metrics(self, query: str, start: datetime, end: datetime) -> list[Metric]:
+    def read_metrics(
+        self,
+        metric_name: str,
+        start: datetime = None,
+        end: datetime = None,
+        labels: dict = None,
+        params: dict = None,
+    ) -> list[Metric]:
         """Read metrics from all storage clients.
 
-        :param query: The query to read metrics
-        :type query: str
-        :param start: The start datetime
-        :type start: datetime
-        :param end: The end datetime
-        :type end: datetime
+        :param metric_name: The name of the metric to read
+        :type metric_name: str
+        :param start: The start datetime for the query
+        :type start: datetime, optional
+        :param end: The end datetime for the query
+        :type end: datetime, optional
+        :param labels: Optional labels to filter the metrics
+        :type labels: dict, optional
+        :param params: Additional query parameters
+        :type params: dict, optional
 
         :return: The list of metrics read from all storage clients
         :rtype: list[Metric]
@@ -60,7 +71,7 @@ class StorageClientsManager:
         all_metrics = []
         for client_name, client in self.storage_clients.items():
             LOG.info(f"Reading metrics from storage client '{client_name}'")
-            metrics = client.read_metrics(query=query, start=start, end=end)
+            metrics = client.read_metrics(metric_name, start, end, labels, params)
             all_metrics.extend(metrics)
         return all_metrics
 

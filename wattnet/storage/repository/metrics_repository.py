@@ -40,13 +40,11 @@ class MetricsRepository:
         """
 
         # Step 1: Query raw metrics
-        query = f"{metric_name}{{"
-        if labels:
-            query += ",".join(f"{k}='{v}'" for k, v in labels.items())
-        query += f"}}[{self.step}s]"
-
         metrics: List[Metric] = self.storage_manager.read_metrics(
-            query=query, start=start, end=end
+            metric_name=metric_name,
+            start=start,
+            end=end,
+            labels=labels,
         )
         best_metrics = filter_best_metrics(metrics)
         return best_metrics

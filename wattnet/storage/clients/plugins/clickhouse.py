@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import clickhouse_connect
@@ -354,7 +354,7 @@ class ClickHouseClient(BaseStorageClient):
                 Metric(
                     metric_type=MetricType(metric_name),
                     value=val,
-                    timestamp=ts,
+                    timestamp=ts.replace(tzinfo=timezone.utc),
                     metadata=normalized,
                 )
             )

@@ -11,13 +11,15 @@ services:
             - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d:ro
 
     grafana:
-        image: grafana/grafana:latest
+        image: grafana/grafana:11.6.10
         container_name: grafana
         volumes:
             - grafana_data:/var/lib/grafana:rw
             - ./grafana/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/provisioning-datasources.yaml:ro
             - ./grafana/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/provisioning-dashboards.yaml:ro
             - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+            - ./grafana/wattnet.eu.svg:/usr/share/grafana/public/img/g8_login_dark.svg
+            - ./grafana/wattnet.eu.svg:/usr/share/grafana/public/img/g8_login_light.svg
         environment:
             - GF_SECURITY_ADMIN_PASSWORD=admin
             - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource

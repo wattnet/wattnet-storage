@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 8,
+	"id": 2,
 	"links": [],
 	"panels": [
 		{
@@ -37,8 +37,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -101,7 +101,7 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 6,
+				"w": 8,
 				"x": 0,
 				"y": 1
 			},
@@ -123,19 +123,84 @@
 			"pluginVersion": "11.5.2",
 			"targets": [
 				{
-					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "zone_generation{zone=~\"$zone\", production_type=~\"$production_type\", data_state=~\"$data_state\", datasource=~\"$datasource\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{production_type}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(production_type) AS metric,\n    value as \" \"\nFROM wattnet.zone_generation\nWHERE\n    zone IN (${zone:singlequote})\n    AND production_type IN (${production_type:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "Zone Generation",
@@ -144,8 +209,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -205,112 +270,8 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 6,
-				"x": 6,
-				"y": 1
-			},
-			"id": 5,
-			"interval": "15m",
-			"options": {
-				"legend": {
-					"calcs": [],
-					"displayMode": "list",
-					"placement": "right",
-					"showLegend": true
-				},
-				"tooltip": {
-					"hideZeros": false,
-					"mode": "single",
-					"sort": "none"
-				}
-			},
-			"pluginVersion": "11.5.2",
-			"targets": [
-				{
-					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
-					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "zone_demand{zone=~\"$zone\", data_state=~\"$data_state\", datasource=~\"$datasource\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{zone}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
-				}
-			],
-			"title": "Zone Demand (Load)",
-			"transparent": true,
-			"type": "timeseries"
-		},
-		{
-			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
-			},
-			"fieldConfig": {
-				"defaults": {
-					"color": {
-						"mode": "palette-classic-by-name"
-					},
-					"custom": {
-						"axisBorderShow": false,
-						"axisCenteredZero": false,
-						"axisColorMode": "text",
-						"axisLabel": "",
-						"axisPlacement": "auto",
-						"barAlignment": 0,
-						"barWidthFactor": 0.6,
-						"drawStyle": "line",
-						"fillOpacity": 5,
-						"gradientMode": "none",
-						"hideFrom": {
-							"legend": false,
-							"tooltip": false,
-							"viz": false
-						},
-						"insertNulls": false,
-						"lineInterpolation": "smooth",
-						"lineWidth": 2,
-						"pointSize": 10,
-						"scaleDistribution": {
-							"type": "linear"
-						},
-						"showPoints": "auto",
-						"spanNulls": false,
-						"stacking": {
-							"group": "A",
-							"mode": "normal"
-						},
-						"thresholdsStyle": {
-							"mode": "off"
-						}
-					},
-					"mappings": [],
-					"thresholds": {
-						"mode": "absolute",
-						"steps": [
-							{
-								"color": "green",
-								"value": null
-							},
-							{
-								"color": "red",
-								"value": 80
-							}
-						]
-					},
-					"unit": "megwatt"
-				},
-				"overrides": []
-			},
-			"gridPos": {
-				"h": 12,
-				"w": 6,
-				"x": 12,
+				"w": 8,
+				"x": 8,
 				"y": 1
 			},
 			"id": 3,
@@ -332,18 +293,25 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "zone_import{zone=~\"$zone\", from=~\"$import\", data_state=~\"$data_state\", datasource=~\"$datasource\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{from}} → {{zone}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT timestamp AS time, concat(from_zone, ' → ', zone) AS metric, value as \" \" FROM wattnet.zone_import WHERE zone IN (${zone:singlequote}) AND from_zone IN (${import:singlequote}) AND data_state IN (${data_state:singlequote}) AND datasource IN (${datasource:singlequote}) AND valid IN (${valid:singlequote}) AND zone_status IN (${zone_status:singlequote}) AND $__timeFilter(timestamp) ORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "Zone Import",
@@ -352,8 +320,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -413,8 +381,8 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 6,
-				"x": 18,
+				"w": 8,
+				"x": 16,
 				"y": 1
 			},
 			"id": 4,
@@ -436,18 +404,25 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "zone_export{zone=~\"$zone\", to=~\"$export\", data_state=~\"$data_state\", datasource=~\"$datasource\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{zone}} → {{to}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' → ', \"to_zone\") AS metric,\n    value as \" \"\nFROM wattnet.zone_export\nWHERE\n    zone IN (${zone:singlequote})\n    AND \"to_zone\" IN (${export:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "Zone Export",
@@ -466,17 +441,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,zone)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone\nFROM wattnet.zone_generation\nORDER BY zone",
 				"includeAll": true,
 				"label": "Zone",
 				"multi": true,
 				"name": "zone",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,zone)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT zone\nFROM wattnet.zone_generation\nORDER BY zone",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -486,17 +461,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,production_type)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT production_type\nFROM wattnet.zone_generation\nORDER BY production_type",
 				"includeAll": true,
 				"label": "Production Type",
 				"multi": true,
 				"name": "production_type",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,production_type)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT production_type\nFROM wattnet.zone_generation\nORDER BY production_type",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -506,17 +481,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_import{zone=~\"$zone\"},from)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT \"from_zone\"\nFROM wattnet.zone_import\nWHERE zone IN (${zone:singlequote})\nORDER BY \"from_zone\"",
 				"includeAll": true,
 				"label": "Import from",
 				"multi": true,
 				"name": "import",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_import{zone=~\"$zone\"},from)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT \"from_zone\"\nFROM wattnet.zone_import\nWHERE zone IN (${zone:singlequote})\nORDER BY \"from_zone\"",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -526,17 +501,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_export{zone=~\"$zone\"},to)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT \"to_zone\"\nFROM wattnet.zone_export\nWHERE zone IN (${zone:singlequote})\nORDER BY \"to_zone\"",
 				"includeAll": true,
 				"label": "Export to",
 				"multi": true,
 				"name": "export",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_export{zone=~\"$zone\"},to)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT \"to_zone\"\nFROM wattnet.zone_export\nWHERE zone IN (${zone:singlequote})\nORDER BY \"to_zone\"",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -546,17 +521,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,valid)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT valid\nFROM wattnet.zone_generation\nORDER BY valid",
 				"includeAll": true,
 				"label": "Valid",
 				"multi": true,
 				"name": "valid",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,valid)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT valid\nFROM wattnet.zone_generation\nORDER BY valid",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -566,17 +541,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,zone_status)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone_status\nFROM wattnet.zone_generation\nORDER BY zone_status",
 				"includeAll": true,
 				"label": "Zone Status",
 				"multi": true,
 				"name": "zone_status",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,zone_status)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT zone_status\nFROM wattnet.zone_generation\nORDER BY zone_status",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -586,17 +561,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,data_state)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT data_state\nFROM wattnet.zone_generation\nORDER BY data_state",
 				"includeAll": true,
 				"label": "Data State",
 				"multi": true,
 				"name": "data_state",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,data_state)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT data_state\nFROM wattnet.zone_generation\nORDER BY data_state",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -606,17 +581,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(zone_generation,datasource)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT datasource\nFROM wattnet.zone_generation\nORDER BY datasource\n",
 				"includeAll": true,
 				"label": "Datasource",
 				"multi": true,
 				"name": "datasource",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(zone_generation,datasource)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT datasource\nFROM wattnet.zone_generation\nORDER BY datasource\n",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -631,6 +606,6 @@
 	"timezone": "utc",
 	"title": "wattnet raw data (stack)",
 	"uid": "aevvcgyj6f37kc",
-	"version": 2,
+	"version": 1,
 	"weekStart": ""
 }

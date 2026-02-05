@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 5,
+	"id": 4,
 	"links": [],
 	"panels": [
 		{
@@ -37,8 +37,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -120,19 +120,25 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "flow_share{zone=~\"$zone\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"interval": "15m",
-					"legendFormat": "{{target}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' → ', target) AS metric,\n    value as \" \"\nFROM wattnet.flow_share\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
+					"refId": "A"
 				}
 			],
 			"title": "$zone Flow Share (Distribution Vector) (Percentage)",
@@ -141,8 +147,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -224,19 +230,25 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "mix_share{zone=~\"$zone\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"interval": "15m",
-					"legendFormat": " {{source}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(source, ' → ', zone) AS metric,\n    value as \" \"\nFROM wattnet.mix_share\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
+					"refId": "A"
 				}
 			],
 			"title": "$zone Mix Share (Composition Vector) (Percentage)",
@@ -245,8 +257,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -326,19 +338,25 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "footprint_share{zone=~\"$zone\", footprint_type=~\"$footprint_type\", scope=~\"$scope\", valid=~\"$valid\", zone_status=~\"$zone_status\"}[15m] > 0",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"interval": "15m",
-					"legendFormat": "{{source}} → {{zone}}: {{scope}} {{footprint_type}} footprint ({{unit}})",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(source, ' → ', zone, ' (', footprint_type, ' / ', scope, ')') AS metric,\n    value as \" \"\nFROM wattnet.footprint_share\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
+					"refId": "A"
 				}
 			],
 			"title": "$zone Global $footprint_type Footprint Composition (Value)",
@@ -369,17 +387,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(footprint_share,zone)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone\nFROM wattnet.footprint_share\nORDER BY zone",
 				"includeAll": true,
 				"label": "Zone",
 				"multi": true,
 				"name": "zone",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(footprint_share,zone)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT zone\nFROM wattnet.footprint_share\nORDER BY zone",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -389,78 +407,78 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(footprint_share,footprint_type)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT footprint_type\nFROM wattnet.footprint_share\nORDER BY footprint_type",
 				"includeAll": true,
 				"label": "Footprint Type",
 				"multi": true,
 				"name": "footprint_type",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(footprint_share,footprint_type)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT footprint_type\nFROM wattnet.footprint_share\nORDER BY footprint_type",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			},
 			{
 				"current": {
-					"text": [""],
-					"value": [""]
+					"text": "All",
+					"value": ["$__all"]
 				},
-				"definition": "label_values(footprint_share,scope)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT scope\nFROM wattnet.footprint_share\nORDER BY scope",
 				"includeAll": true,
 				"label": "Footprint Scope",
 				"multi": true,
 				"name": "scope",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(footprint_share,scope)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT scope\nFROM wattnet.footprint_share\nORDER BY scope",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			},
 			{
 				"current": {
-					"text": [""],
-					"value": [""]
+					"text": "All",
+					"value": ["$__all"]
 				},
-				"definition": "label_values(footprint_share,valid)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT valid\nFROM wattnet.footprint_share\nORDER BY valid",
 				"includeAll": true,
 				"label": "Valid",
 				"multi": true,
 				"name": "valid",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(footprint_share,valid)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
-				"refresh": 1,
+				"query": "SELECT DISTINCT valid\nFROM wattnet.footprint_share\nORDER BY valid",
+				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			},
 			{
 				"current": {
-					"text": [""],
-					"value": [""]
+					"text": ["All"],
+					"value": ["$__all"]
 				},
-				"definition": "label_values(footprint_share,zone_status)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone_status\nFROM wattnet.footprint_share\nORDER BY zone_status",
 				"includeAll": true,
 				"label": "Zone Status",
 				"multi": true,
 				"name": "zone_status",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(footprint_share,zone_status)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
-				"refresh": 1,
+				"query": "SELECT DISTINCT zone_status\nFROM wattnet.footprint_share\nORDER BY zone_status",
+				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			}

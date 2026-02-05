@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 1,
+	"id": 6,
 	"links": [],
 	"panels": [
 		{
@@ -37,8 +37,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -117,19 +117,84 @@
 			"repeatDirection": "v",
 			"targets": [
 				{
-					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "local_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} local footprint ({{unit}})",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "Local $footprint_type Footprint ($scope scope)",
@@ -138,8 +203,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -218,16 +283,26 @@
 			"repeatDirection": "v",
 			"targets": [
 				{
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "global_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"interval": "15m",
-					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} global footprint ({{unit}})",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "Global $footprint_type Footprint ($scope scope)",
@@ -236,8 +311,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -314,34 +389,106 @@
 			"targets": [
 				{
 					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "local_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{zone}}: {{scope}}{{footprint_type}} local footprint ({{unit}})",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "local"
 				},
 				{
-					"datasource": {
-						"type": "prometheus",
-						"uid": "PAE45454D0EDB9216"
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
 					},
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "global_footprint{zone=~\"$zone\", footprint_type=~\"$footprint_type\", valid=~\"$valid\", zone_status=~\"$zone_status\", scope=~\"$scope\"}[15m]",
-					"fullMetaSearch": false,
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
 					"hide": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{zone}}: {{scope}} {{footprint_type}} global footprint ({{unit}})",
-					"range": true,
-					"refId": "B",
-					"useBackend": false
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "global"
 				}
 			],
 			"title": "Comparison $footprint_type Footprint ($scope scope)",
@@ -360,17 +507,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(local_footprint,zone)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone\nFROM wattnet.local_footprint\nORDER BY zone",
 				"includeAll": true,
 				"label": "Zone",
 				"multi": true,
 				"name": "zone",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(local_footprint,zone)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT zone\nFROM wattnet.local_footprint\nORDER BY zone",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -380,37 +527,37 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(local_footprint,footprint_type)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT footprint_type\nFROM wattnet.local_footprint\nORDER BY footprint_type",
 				"includeAll": true,
 				"label": "Footprint Type",
 				"multi": true,
 				"name": "footprint_type",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(local_footprint,footprint_type)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT footprint_type\nFROM wattnet.local_footprint\nORDER BY footprint_type",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			},
 			{
 				"current": {
-					"text": ["All"],
+					"text": "All",
 					"value": ["$__all"]
 				},
-				"definition": "label_values(local_footprint,scope)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT scope\nFROM wattnet.local_footprint\nORDER BY scope",
 				"includeAll": true,
 				"label": "Footprint Scope",
 				"multi": true,
 				"name": "scope",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(local_footprint,scope)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT scope\nFROM wattnet.local_footprint\nORDER BY scope",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -420,17 +567,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(local_footprint,valid)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT valid\nFROM wattnet.local_footprint\nORDER BY valid",
 				"includeAll": true,
 				"label": "Valid",
 				"multi": true,
 				"name": "valid",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(local_footprint,valid)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT valid\nFROM wattnet.local_footprint\nORDER BY valid",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -440,17 +587,17 @@
 					"text": "All",
 					"value": "$__all"
 				},
-				"definition": "label_values(local_footprint,zone_status)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone_status\nFROM wattnet.local_footprint\nORDER BY zone_status",
 				"includeAll": true,
 				"label": "Zone Status",
 				"multi": true,
 				"name": "zone_status",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(local_footprint,zone_status)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT zone_status\nFROM wattnet.local_footprint\nORDER BY zone_status",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"

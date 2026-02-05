@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 5,
+	"id": 1,
 	"links": [],
 	"panels": [
 		{
@@ -37,8 +37,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -119,15 +119,116 @@
 			"pluginVersion": "11.5.2",
 			"targets": [
 				{
-					"disableTextWrap": false,
-					"editorMode": "code",
-					"expr": "factor{factor_type=~\"$factor_type\", scope=~\"$scope\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"legendFormat": "{{production_type}} ({{scope}})",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"builderOptions": {
+						"aggregates": [],
+						"columns": [
+							{
+								"alias": "time",
+								"name": "timestamp"
+							},
+							{
+								"alias": "factor",
+								"name": "value"
+							},
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"key": "factor_type",
+								"operator": "IN",
+								"type": "string",
+								"value": ["${factor_type:singlequote}"]
+							},
+							{
+								"condition": "AND",
+								"key": "scope",
+								"operator": "IN",
+								"type": "string",
+								"value": ["${scope:singlequote}"]
+							},
+							{
+								"condition": "AND",
+								"key": "timestamp",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"name": "time"
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
+					},
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"aggregates": [],
+							"columns": [
+								{
+									"alias": "time",
+									"name": "timestamp"
+								},
+								{
+									"alias": "factor",
+									"name": "value"
+								},
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"key": "factor_type",
+									"operator": "IN",
+									"type": "string",
+									"value": ["${factor_type:singlequote}"]
+								},
+								{
+									"condition": "AND",
+									"key": "scope",
+									"operator": "IN",
+									"type": "string",
+									"value": ["${scope:singlequote}"]
+								},
+								{
+									"condition": "AND",
+									"key": "timestamp",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"name": "time"
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    toDateTime(timestamp) AS time,\n    concat(production_type, ' / ', scope) AS metric,\n    value AS \" \"\nFROM wattnet.factor\nWHERE\n    factor_type IN (${factor_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
 				}
 			],
 			"title": "$factor_type Values",
@@ -136,8 +237,8 @@
 		},
 		{
 			"datasource": {
-				"type": "prometheus",
-				"uid": "P4169E866C3094E38"
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
 			},
 			"fieldConfig": {
 				"defaults": {
@@ -179,7 +280,7 @@
 					{
 						"matcher": {
 							"id": "byName",
-							"options": "Value"
+							"options": "value"
 						},
 						"properties": [
 							{
@@ -321,6 +422,18 @@
 								"value": 163
 							}
 						]
+					},
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "time"
+						},
+						"properties": [
+							{
+								"id": "custom.width",
+								"value": 198
+							}
+						]
 					}
 				]
 			},
@@ -346,29 +459,30 @@
 			"pluginVersion": "11.5.2",
 			"targets": [
 				{
-					"disableTextWrap": false,
-					"editorMode": "builder",
-					"exemplar": false,
-					"expr": "factor{factor_type=~\"$factor_type\"}[15m]",
-					"fullMetaSearch": false,
-					"includeNullMetadata": true,
-					"instant": false,
-					"legendFormat": "{{production_type}}",
-					"range": true,
-					"refId": "A",
-					"useBackend": false
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 1,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "table",
+					"rawSql": "SELECT\n    production_type,\n    scope,\n    value,\n    unit,\n    source,\n    year,\n    source_link,\n    timestamp AS time\nFROM wattnet.factor\nWHERE\n    match(factor_type, '${factor_type}')\n    AND $__timeFilter(timestamp)\nORDER BY timestamp ASC",
+					"refId": "A"
 				}
 			],
 			"title": "$factor_type Information",
 			"transformations": [
-				{
-					"id": "timeSeriesTable",
-					"options": {
-						"A": {
-							"timeField": "Time"
-						}
-					}
-				},
 				{
 					"id": "organize",
 					"options": {
@@ -376,20 +490,19 @@
 							"__name__": true,
 							"factor_type": true,
 							"instance": true,
-							"job": true
+							"job": true,
+							"time": false
 						},
 						"includeByName": {},
 						"indexByName": {
-							"Trend #A": 5,
-							"__name__": 0,
-							"factor_type": 1,
-							"instance": 2,
-							"job": 3,
-							"production_type": 4,
-							"source": 7,
-							"source_link": 9,
-							"unit": 6,
-							"year": 8
+							"production_type": 1,
+							"scope": 2,
+							"source": 6,
+							"source_link": 7,
+							"time": 0,
+							"unit": 4,
+							"value": 3,
+							"year": 5
 						},
 						"renameByName": {
 							"Trend #A": "Value",
@@ -414,20 +527,20 @@
 		"list": [
 			{
 				"current": {
-					"text": ["CO2", "Water"],
-					"value": ["CO2", "Water"]
+					"text": "All",
+					"value": ["$__all"]
 				},
-				"definition": "label_values(factor,factor_type)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT factor_type\nFROM wattnet.factor\nORDER BY factor_type",
 				"includeAll": true,
 				"label": "Factor Type",
 				"multi": true,
 				"name": "factor_type",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(factor,factor_type)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT factor_type\nFROM wattnet.factor\nORDER BY factor_type",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -437,17 +550,17 @@
 					"text": "All",
 					"value": ["$__all"]
 				},
-				"definition": "label_values(factor,scope)",
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT scope\nFROM wattnet.factor\nORDER BY scope",
 				"includeAll": true,
 				"label": "Factor Scope",
 				"multi": true,
 				"name": "scope",
 				"options": [],
-				"query": {
-					"qryType": 1,
-					"query": "label_values(factor,scope)",
-					"refId": "PrometheusVariableQueryEditor-VariableQuery"
-				},
+				"query": "SELECT DISTINCT scope\nFROM wattnet.factor\nORDER BY scope",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"

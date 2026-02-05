@@ -11,7 +11,7 @@ services:
             - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d:ro
 
     grafana:
-        image: grafana/grafana:11.6.10
+        image: grafana/grafana:latest
         container_name: grafana
         volumes:
             - grafana_data:/var/lib/grafana:rw

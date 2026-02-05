@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 3,
+	"id": 2,
 	"links": [],
 	"panels": [
 		{
@@ -72,6 +72,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -87,7 +88,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							}
 						]
 					},
@@ -116,7 +117,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"targets": [
 				{
 					"builderOptions": {
@@ -195,7 +196,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(production_type) AS metric,\n    value as \" \"\nFROM wattnet.zone_generation\nWHERE\n    zone IN (${zone:singlequote})\n    AND production_type IN (${production_type:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(production_type) AS metric,\n    value as \" \"\nFROM wattnet.zone_generation FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND production_type IN (${production_type:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
 					"refId": "A"
 				}
 			],
@@ -237,6 +238,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -252,7 +254,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							},
 							{
 								"color": "red",
@@ -285,7 +287,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"targets": [
 				{
 					"datasource": {
@@ -307,7 +309,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(from_zone, ' → ', zone) AS metric,\n    value as \" \"\nFROM wattnet.zone_import\nWHERE\n    zone IN (${zone:singlequote})\n    AND from_zone IN (${import:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(from_zone, ' → ', zone) AS metric,\n    value as \" \"\nFROM wattnet.zone_import FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND from_zone IN (${import:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
@@ -349,6 +351,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -364,7 +367,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							},
 							{
 								"color": "red",
@@ -397,7 +400,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"targets": [
 				{
 					"datasource": {
@@ -418,7 +421,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' → ', \"to_zone\") AS metric,\n    value as \" \"\nFROM wattnet.zone_export\nWHERE\n    zone IN (${zone:singlequote})\n    AND \"to_zone\" IN (${export:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' → ', \"to_zone\") AS metric,\n    value as \" \"\nFROM wattnet.zone_export FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND \"to_zone\" IN (${export:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
@@ -429,7 +432,7 @@
 	],
 	"preload": false,
 	"refresh": "",
-	"schemaVersion": 40,
+	"schemaVersion": 42,
 	"tags": ["wattnet", "raw", "generation", "import", "export"],
 	"templating": {
 		"list": [
@@ -604,6 +607,5 @@
 	"timezone": "utc",
 	"title": "wattnet raw data",
 	"uid": "eefsr85ztmlmoa",
-	"version": 1,
-	"weekStart": ""
+	"version": 1
 }

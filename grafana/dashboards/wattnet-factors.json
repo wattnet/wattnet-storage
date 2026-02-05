@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 1,
+	"id": 4,
 	"links": [],
 	"panels": [
 		{
@@ -69,6 +69,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -84,7 +85,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							},
 							{
 								"color": "red",
@@ -116,7 +117,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"targets": [
 				{
 					"builderOptions": {
@@ -227,7 +228,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    toDateTime(timestamp) AS time,\n    concat(production_type, ' / ', scope) AS metric,\n    value AS \" \"\nFROM wattnet.factor\nWHERE\n    factor_type IN (${factor_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    toDateTime(timestamp) AS time,\n    concat(production_type, ' / ', scope) AS metric,\n    value AS \" \"\nFROM wattnet.factor FINAL\nWHERE\n    factor_type IN (${factor_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
@@ -248,10 +249,13 @@
 					"custom": {
 						"align": "auto",
 						"cellOptions": {
-							"type": "auto",
-							"wrapText": false
+							"type": "auto"
 						},
-						"inspect": false
+						"footer": {
+							"reducers": []
+						},
+						"inspect": false,
+						"wrapText": false
 					},
 					"mappings": [],
 					"thresholds": {
@@ -259,7 +263,7 @@
 						"steps": [
 							{
 								"color": "#ffffff",
-								"value": null
+								"value": 0
 							}
 						]
 					}
@@ -294,9 +298,12 @@
 							{
 								"id": "custom.cellOptions",
 								"value": {
-									"type": "auto",
-									"wrapText": true
+									"type": "auto"
 								}
+							},
+							{
+								"id": "custom.wrapText",
+								"value": true
 							}
 						]
 					},
@@ -352,9 +359,12 @@
 							{
 								"id": "custom.cellOptions",
 								"value": {
-									"type": "color-text",
-									"wrapText": false
+									"type": "color-text"
 								}
+							},
+							{
+								"id": "custom.wrapText",
+								"value": false
 							}
 						]
 					},
@@ -374,9 +384,12 @@
 							{
 								"id": "custom.cellOptions",
 								"value": {
-									"type": "color-text",
-									"wrapText": false
+									"type": "color-text"
 								}
+							},
+							{
+								"id": "custom.wrapText",
+								"value": false
 							},
 							{
 								"id": "mappings",
@@ -447,16 +460,10 @@
 			"interval": "15m",
 			"options": {
 				"cellHeight": "sm",
-				"footer": {
-					"countRows": false,
-					"fields": "",
-					"reducer": ["sum"],
-					"show": false
-				},
 				"showHeader": true,
 				"sortBy": []
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"targets": [
 				{
 					"datasource": {
@@ -477,7 +484,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "table",
-					"rawSql": "SELECT\n    production_type,\n    scope,\n    value,\n    unit,\n    source,\n    year,\n    source_link,\n    timestamp AS time\nFROM wattnet.factor\nWHERE\n    match(factor_type, '${factor_type}')\n    AND $__timeFilter(timestamp)\nORDER BY timestamp ASC",
+					"rawSql": "SELECT\n    production_type,\n    scope,\n    value,\n    unit,\n    source,\n    year,\n    source_link,\n    timestamp AS time\nFROM wattnet.factor FINAL\nWHERE\n    match(factor_type, '${factor_type}')\n    AND $__timeFilter(timestamp)\nORDER BY timestamp ASC",
 					"refId": "A"
 				}
 			],
@@ -521,7 +528,7 @@
 	],
 	"preload": false,
 	"refresh": "",
-	"schemaVersion": 40,
+	"schemaVersion": 42,
 	"tags": ["wattnet", "factors"],
 	"templating": {
 		"list": [
@@ -575,6 +582,5 @@
 	"timezone": "utc",
 	"title": "wattnet factors",
 	"uid": "feh6mxfjz5ssgd",
-	"version": 1,
-	"weekStart": ""
+	"version": 1
 }

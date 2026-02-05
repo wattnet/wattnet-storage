@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 6,
+	"id": 5,
 	"links": [],
 	"panels": [
 		{
@@ -69,6 +69,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -84,7 +85,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							}
 						]
 					}
@@ -112,7 +113,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"repeat": "footprint_type",
 			"repeatDirection": "v",
 			"targets": [
@@ -193,7 +194,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
@@ -235,6 +236,7 @@
 							"type": "linear"
 						},
 						"showPoints": "auto",
+						"showValues": false,
 						"spanNulls": false,
 						"stacking": {
 							"group": "A",
@@ -250,7 +252,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							}
 						]
 					}
@@ -278,7 +280,7 @@
 					"sort": "none"
 				}
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"repeat": "footprint_type",
 			"repeatDirection": "v",
 			"targets": [
@@ -301,7 +303,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_footprint FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
@@ -346,7 +348,7 @@
 						"steps": [
 							{
 								"color": "green",
-								"value": null
+								"value": 0
 							}
 						]
 					}
@@ -383,7 +385,7 @@
 				"xTickLabelRotation": 0,
 				"xTickLabelSpacing": 100
 			},
-			"pluginVersion": "11.5.2",
+			"pluginVersion": "12.3.2",
 			"repeat": "footprint_type",
 			"repeatDirection": "v",
 			"targets": [
@@ -406,7 +408,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', footprint_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_footprint FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "local"
 				},
 				{
@@ -498,7 +500,7 @@
 	],
 	"preload": false,
 	"refresh": "",
-	"schemaVersion": 40,
+	"schemaVersion": 42,
 	"tags": ["wattnet", "footprints", "local", "global"],
 	"templating": {
 		"list": [
@@ -612,6 +614,5 @@
 	"timezone": "utc",
 	"title": "wattnet footprints data",
 	"uid": "ceh76nxs701s0f",
-	"version": 1,
-	"weekStart": ""
+	"version": 1
 }

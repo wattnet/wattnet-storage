@@ -47,7 +47,7 @@
 							"tooltip": false,
 							"viz": false
 						},
-						"insertNulls": false,
+						"insertNulls": 900000,
 						"lineInterpolation": "smooth",
 						"lineStyle": {
 							"fill": "solid"

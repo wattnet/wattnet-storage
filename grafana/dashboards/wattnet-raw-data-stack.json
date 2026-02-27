@@ -61,7 +61,7 @@
 							"tooltip": false,
 							"viz": false
 						},
-						"insertNulls": false,
+						"insertNulls": 900000,
 						"lineInterpolation": "smooth",
 						"lineStyle": {
 							"fill": "solid"
@@ -234,7 +234,7 @@
 							"tooltip": false,
 							"viz": false
 						},
-						"insertNulls": false,
+						"insertNulls": 900000,
 						"lineInterpolation": "smooth",
 						"lineWidth": 2,
 						"pointSize": 10,
@@ -346,7 +346,7 @@
 							"tooltip": false,
 							"viz": false
 						},
-						"insertNulls": false,
+						"insertNulls": 900000,
 						"lineInterpolation": "smooth",
 						"lineWidth": 2,
 						"pointSize": 10,

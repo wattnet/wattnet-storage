@@ -62,7 +62,7 @@
 							"viz": false
 						},
 						"insertNulls": 900000,
-						"lineInterpolation": "linear",
+						"lineInterpolation": "smooth",
 						"lineWidth": 2,
 						"pointSize": 10,
 						"scaleDistribution": {
@@ -229,7 +229,7 @@
 							"viz": false
 						},
 						"insertNulls": 900000,
-						"lineInterpolation": "linear",
+						"lineInterpolation": "smooth",
 						"lineWidth": 2,
 						"pointSize": 10,
 						"scaleDistribution": {

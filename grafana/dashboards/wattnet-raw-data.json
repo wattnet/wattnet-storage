@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 2,
+	"id": 5,
 	"links": [],
 	"panels": [
 		{
@@ -539,23 +539,32 @@
 			},
 			{
 				"current": {
-					"text": "All",
-					"value": "$__all"
+					"text": ["$__all"],
+					"value": ["$__all"]
 				},
-				"datasource": {
-					"type": "grafana-clickhouse-datasource",
-					"uid": "PDEE91DDB90597936"
-				},
-				"definition": "SELECT DISTINCT zone_status\nFROM wattnet.zone_generation\nORDER BY zone_status",
 				"includeAll": true,
 				"label": "Zone Status",
 				"multi": true,
 				"name": "zone_status",
-				"options": [],
-				"query": "SELECT DISTINCT zone_status\nFROM wattnet.zone_generation\nORDER BY zone_status",
-				"refresh": 2,
-				"regex": "",
-				"type": "query"
+				"options": [
+					{
+						"selected": false,
+						"text": "complete",
+						"value": "complete"
+					},
+					{
+						"selected": false,
+						"text": "preview",
+						"value": "preview"
+					},
+					{
+						"selected": false,
+						"text": "missing",
+						"value": "missing"
+					}
+				],
+				"query": "complete, preview, missing",
+				"type": "custom"
 			},
 			{
 				"current": {

@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 1,
+	"id": 5,
 	"links": [],
 	"panels": [
 		{
@@ -102,7 +102,7 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 8,
+				"w": 6,
 				"x": 0,
 				"y": 1
 			},
@@ -236,6 +236,9 @@
 						},
 						"insertNulls": 900000,
 						"lineInterpolation": "smooth",
+						"lineStyle": {
+							"fill": "solid"
+						},
 						"lineWidth": 2,
 						"pointSize": 10,
 						"scaleDistribution": {
@@ -272,8 +275,120 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 8,
-				"x": 8,
+				"w": 6,
+				"x": 6,
+				"y": 1
+			},
+			"id": 5,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "right",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "12.3.2",
+			"targets": [
+				{
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "PDEE91DDB90597936"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.14.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone) AS metric,\n    value AS \" \"\nFROM wattnet.zone_load FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND datasource IN (${datasource:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
+				}
+			],
+			"title": "Zone Load",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic-by-name"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 5,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": 900000,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"showValues": false,
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "normal"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": 0
+							},
+							{
+								"color": "red",
+								"value": 80
+							}
+						]
+					},
+					"unit": "megwatt"
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 12,
+				"w": 6,
+				"x": 12,
 				"y": 1
 			},
 			"id": 3,
@@ -384,8 +499,8 @@
 			},
 			"gridPos": {
 				"h": 12,
-				"w": 8,
-				"x": 16,
+				"w": 6,
+				"x": 18,
 				"y": 1
 			},
 			"id": 4,

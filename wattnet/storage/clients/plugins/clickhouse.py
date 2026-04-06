@@ -49,6 +49,17 @@ TABLE_SCHEMAS = {
         ("zone", "LowCardinality(String)"),
         ("zone_status", "LowCardinality(String)"),
     ],
+    "zone_load": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("data_state", "LowCardinality(String)"),
+        ("datasource", "LowCardinality(String)"),
+        ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
     "local_footprint": [
         ("timestamp", "DateTime"),
         ("value", "Float64"),
@@ -66,6 +77,48 @@ TABLE_SCHEMAS = {
         ("footprint_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
+    "local_impact": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("impact_type", "LowCardinality(String)"),
+        ("scope", "LowCardinality(String)"),
+        ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
+    "global_impact": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("impact_type", "LowCardinality(String)"),
+        ("scope", "LowCardinality(String)"),
+        ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
+    "local_score": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("score_type", "LowCardinality(String)"),
+        ("scope", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
+    "global_score": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("score_type", "LowCardinality(String)"),
+        ("scope", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
         ("updated_at", "DateTime"),
         ("zone", "LowCardinality(String)"),
@@ -107,6 +160,18 @@ TABLE_SCHEMAS = {
         ("timestamp", "DateTime"),
         ("value", "Float64"),
         ("footprint_type", "LowCardinality(String)"),
+        ("scope", "LowCardinality(String)"),
+        ("source", "LowCardinality(String)"),
+        ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
+    "impact_share": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("impact_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("source", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -171,6 +236,8 @@ class ClickHouseClient(BaseStorageClient):
                 "factor_type",
                 "production_type",
                 "footprint_type",
+                "impact_type",
+                "score_type",
                 "scope",
                 "source",
                 "target",
@@ -207,6 +274,26 @@ class ClickHouseClient(BaseStorageClient):
             password=self.password,
             database=self.database,
         )
+
+    # ------------------------------------------------------------------
+    # TIME ALIGNMENT
+    # ------------------------------------------------------------------
+
+    def _align_floor(self, dt: datetime) -> datetime:
+        """Round down to nearest interval_minutes."""
+        discard = timedelta(
+            minutes=dt.minute % self.interval_minutes,
+            seconds=dt.second,
+            microseconds=dt.microsecond,
+        )
+        return dt - discard
+
+    def _align_ceil(self, dt: datetime) -> datetime:
+        """Round up to nearest interval_minutes."""
+        floored = self._align_floor(dt)
+        if floored == dt:
+            return dt
+        return floored + timedelta(minutes=self.interval_minutes)
 
     # ------------------------------------------------------------------
     #                           WRITE METRICS
@@ -292,24 +379,34 @@ class ClickHouseClient(BaseStorageClient):
         """
         client = self._new_client()
 
-        # Handle missing start/end values with a default window
-        now = datetime.now()
+        # Determine time range with dynamic fallback (UTC now aligned to interval)
+        now = self._align_floor(datetime.now(timezone.utc))
         interval = timedelta(minutes=self.interval_minutes)
 
         if start is None and end is None:
-            end = now
-            start = now - interval
-        elif start is None and end is not None:
-            start = end - interval
-        elif start is not None and end is None:
+            start = now
             end = start + interval
+
+        elif start is None and end is not None:
+            end = self._align_floor(end)
+            start = end - interval
+
+        elif start is not None and end is None:
+            start = self._align_floor(start)
+            end = start + interval
+
+        else:
+            start = self._align_floor(start)
+            end = self._align_floor(end)
+
+        print(f"Querying {metric_name} from {start} to {end} with labels {labels}")
 
         # Build SELECT query
         sql = f"""
         SELECT *
         FROM {self.database}.{metric_name} FINAL
         WHERE timestamp >= toDateTime('{start.strftime('%Y-%m-%d %H:%M:%S')}')
-        AND timestamp <= toDateTime('{end.strftime('%Y-%m-%d %H:%M:%S')}')
+        AND timestamp < toDateTime('{end.strftime('%Y-%m-%d %H:%M:%S')}')
         """
 
         # Apply label filters if provided

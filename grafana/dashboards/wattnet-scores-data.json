@@ -1,0 +1,632 @@
+{
+	"annotations": {
+		"list": [
+			{
+				"builtIn": 1,
+				"datasource": {
+					"type": "grafana",
+					"uid": "-- Grafana --"
+				},
+				"enable": true,
+				"hide": true,
+				"iconColor": "rgba(0, 211, 255, 1)",
+				"name": "Annotations & Alerts",
+				"type": "dashboard"
+			}
+		]
+	},
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 0,
+	"links": [],
+	"panels": [
+		{
+			"collapsed": false,
+			"gridPos": {
+				"h": 1,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			},
+			"id": 2,
+			"panels": [],
+			"repeat": "zone",
+			"title": "$zone",
+			"type": "row"
+		},
+		{
+			"datasource": {
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "continuous-BlPu"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "scheme",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": 900000,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"showValues": false,
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"max": 100,
+					"min": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": 0
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 7,
+				"w": 8,
+				"x": 0,
+				"y": 1
+			},
+			"id": 1,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "table",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "12.3.2",
+			"repeat": "score_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
+					},
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
+				}
+			],
+			"title": "Local $score_type score ($scope scope)",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "continuous-BlPu"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "scheme",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"insertNulls": 900000,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "auto",
+						"showValues": false,
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"max": 100,
+					"min": 1,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": 0
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 7,
+				"w": 8,
+				"x": 8,
+				"y": 1
+			},
+			"id": 3,
+			"interval": "15m",
+			"options": {
+				"legend": {
+					"calcs": [],
+					"displayMode": "table",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				}
+			},
+			"pluginVersion": "12.3.2",
+			"repeat": "score_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "A"
+				}
+			],
+			"title": "Global $score_type score ($scope scope)",
+			"transparent": true,
+			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic-by-name"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"fillOpacity": 80,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"lineWidth": 1,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"max": 100,
+					"min": 0,
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": 0
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 7,
+				"w": 8,
+				"x": 16,
+				"y": 1
+			},
+			"id": 4,
+			"interval": "15m",
+			"options": {
+				"barRadius": 0,
+				"barWidth": 1,
+				"fullHighlight": false,
+				"groupWidth": 0.38,
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"orientation": "auto",
+				"showValue": "auto",
+				"stacking": "none",
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				},
+				"xTickLabelRotation": 0,
+				"xTickLabelSpacing": 100
+			},
+			"pluginVersion": "12.3.2",
+			"repeat": "score_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "local"
+				},
+				{
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
+					},
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"hide": false,
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "global"
+				}
+			],
+			"title": "Comparison $score_type score ($scope scope)",
+			"transparent": true,
+			"type": "barchart"
+		}
+	],
+	"preload": false,
+	"refresh": "",
+	"schemaVersion": 42,
+	"tags": ["wattnet", "scores", "local", "global"],
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT zone\nFROM wattnet.local_score\nORDER BY zone",
+				"includeAll": true,
+				"label": "Zone",
+				"multi": true,
+				"name": "zone",
+				"options": [],
+				"query": "SELECT DISTINCT zone\nFROM wattnet.local_score\nORDER BY zone",
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT score_type\nFROM wattnet.local_score\nORDER BY score_type",
+				"includeAll": true,
+				"label": "score Type",
+				"multi": true,
+				"name": "score_type",
+				"options": [],
+				"query": "SELECT DISTINCT score_type\nFROM wattnet.local_score\nORDER BY score_type",
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT scope\nFROM wattnet.local_score\nORDER BY scope",
+				"includeAll": true,
+				"label": "score Scope",
+				"multi": true,
+				"name": "scope",
+				"options": [],
+				"query": "SELECT DISTINCT scope\nFROM wattnet.local_score\nORDER BY scope",
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": "All",
+					"value": "$__all"
+				},
+				"datasource": {
+					"type": "grafana-clickhouse-datasource",
+					"uid": "PDEE91DDB90597936"
+				},
+				"definition": "SELECT DISTINCT valid\nFROM wattnet.local_score\nORDER BY valid",
+				"includeAll": true,
+				"label": "Valid",
+				"multi": true,
+				"name": "valid",
+				"options": [],
+				"query": "SELECT DISTINCT valid\nFROM wattnet.local_score\nORDER BY valid",
+				"refresh": 2,
+				"regex": "",
+				"type": "query"
+			},
+			{
+				"current": {
+					"text": ["$__all"],
+					"value": ["$__all"]
+				},
+				"includeAll": true,
+				"label": "Zone Status",
+				"multi": true,
+				"name": "zone_status",
+				"options": [
+					{
+						"selected": false,
+						"text": "complete",
+						"value": "complete"
+					},
+					{
+						"selected": false,
+						"text": "preview",
+						"value": "preview"
+					},
+					{
+						"selected": false,
+						"text": "missing",
+						"value": "missing"
+					}
+				],
+				"query": "complete, preview, missing",
+				"type": "custom"
+			}
+		]
+	},
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"timezone": "utc",
+	"title": "wattnet scores data",
+	"uid": "ceh76nxs701s0r",
+	"version": 3
+}

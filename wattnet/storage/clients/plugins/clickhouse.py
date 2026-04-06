@@ -399,8 +399,6 @@ class ClickHouseClient(BaseStorageClient):
             start = self._align_floor(start)
             end = self._align_floor(end)
 
-        print(f"Querying {metric_name} from {start} to {end} with labels {labels}")
-
         # Build SELECT query
         sql = f"""
         SELECT *

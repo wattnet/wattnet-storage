@@ -294,6 +294,90 @@ class ClickHouseClient(BaseStorageClient):
         return floored + timedelta(minutes=self.interval_minutes)
 
     # ------------------------------------------------------------------
+    # TIME RANGE RESOLUTION
+    # ------------------------------------------------------------------
+
+    def _resolve_time_range(
+        self,
+        start: datetime | None,
+        end: datetime | None,
+        now: datetime | None = None,  # injectable for deterministic testing
+    ) -> tuple[datetime, datetime]:
+        """
+        Returns an aligned (start, end) pair covering at least one interval bucket.
+
+        Cases:
+            (None, None) → current aligned bucket
+            (None, end)  → one bucket ending at ceil(end)
+            (start, None)→ one bucket starting at floor(start)
+            (start, end) → floor(start) to ceil(end); raises if range is invalid
+        """
+        interval = timedelta(minutes=self.interval_minutes)
+        now = now or datetime.now(timezone.utc)
+
+        match (start, end):
+            case (None, None):
+                start = self._align_floor(now)
+                end = start + interval
+
+            case (None, _):
+                end = self._align_ceil(end)
+                start = end - interval
+
+            case (_, None):
+                start = self._align_floor(start)
+                end = start + interval
+
+            case (_, _):
+                start = self._align_floor(start)
+                end = self._align_ceil(end)
+                if end <= start:
+                    raise ValueError(
+                        f"Invalid time range after alignment: start={start}, end={end}"
+                    )
+
+        assert end > start, f"Invariant violated: start={start} >= end={end}"
+        return start, end
+
+    def _build_query(
+        self,
+        metric_name: str,
+        start: datetime,
+        end: datetime,
+        labels: dict | None = None,
+    ) -> tuple[str, dict]:
+        """
+        Returns a parameterized (sql, params) pair for clickhouse_connect.
+
+        Label filters are validated against TABLE_SCHEMAS to prevent
+        unknown-column injection. Values are passed as query parameters.
+        """
+        params = {
+            "start": start.strftime("%Y-%m-%d %H:%M:%S"),
+            "end": end.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        sql = f"""
+        SELECT *
+        FROM {self.database}.{metric_name} FINAL
+        WHERE timestamp >= toDateTime({{start:String}})
+          AND timestamp < toDateTime({{end:String}})
+        """
+
+        if labels:
+            valid_cols = {c[0] for c in TABLE_SCHEMAS[metric_name]}
+            for k, v in labels.items():
+                mapped_k = COLUMN_NAME_MAP.get(k, k)
+                if mapped_k not in valid_cols:
+                    continue
+                param_key = f"label_{mapped_k}"
+                sql += f" AND {mapped_k} = {{{param_key}:String}}"
+                params[param_key] = str(v)
+
+        sql += " ORDER BY timestamp ASC"
+        return sql, params
+
+    # ------------------------------------------------------------------
     #                           WRITE METRICS
     # ------------------------------------------------------------------
     def write_metrics(self, metrics: List[Metric]):
@@ -335,7 +419,7 @@ class ClickHouseClient(BaseStorageClient):
                         row.append(float(m.value))
 
                     elif col == "updated_at":
-                        row.append(datetime.now())
+                        row.append(datetime.now(timezone.utc))  # UTC-aware
 
                     else:
                         # Normalize metadata keys (from → from_zone)
@@ -368,6 +452,7 @@ class ClickHouseClient(BaseStorageClient):
         end: datetime | None,
         labels=None,
         params=None,
+        _now: datetime | None = None,  # injectable for tests
     ):
         """
         Read metrics from a ClickHouse table within a time interval.
@@ -377,57 +462,10 @@ class ClickHouseClient(BaseStorageClient):
         """
         client = self._new_client()
 
-        # Determine the time range with dynamic fallback (UTC now aligned to interval)
-        now = datetime.now(timezone.utc)
-        interval = timedelta(minutes=self.interval_minutes)
+        start, end = self._resolve_time_range(start, end, now=_now)
+        sql, query_params = self._build_query(metric_name, start, end, labels)
 
-        if start is None and end is None:
-            # Both start and end are None → use the current bucket
-            start = self._align_floor(now)
-            end = start + interval
-
-        elif start is None and end is not None:
-            # Only end is provided → ceil to include the last bucket
-            end = self._align_ceil(end)
-            start = end - interval
-
-        elif start is not None and end is None:
-            # Only start is provided → floor to align
-            start = self._align_floor(start)
-            end = start + interval
-
-        else:
-            # Both start and end are provided → floor start, ceil end
-            start = self._align_floor(start)
-            end = self._align_ceil(end)
-
-        # Ensure the range covers at least one bucket to avoid empty results
-        if start >= end:
-            end = start + interval
-
-        # Build SELECT query
-        sql = f"""
-        SELECT *
-        FROM {self.database}.{metric_name} FINAL
-        WHERE timestamp >= toDateTime('{start.strftime('%Y-%m-%d %H:%M:%S')}')
-        AND timestamp < toDateTime('{end.strftime('%Y-%m-%d %H:%M:%S')}')
-        """
-
-        # Apply label filters if provided
-        if labels:
-            valid_cols = {c[0] for c in TABLE_SCHEMAS[metric_name]}
-
-            for k, v in labels.items():
-                mapped_k = COLUMN_NAME_MAP.get(k, k)
-                if mapped_k not in valid_cols:
-                    continue
-
-                val = f"'{v}'" if isinstance(v, str) else str(v)
-                sql += f" AND {mapped_k} = {val}"
-
-        sql += " ORDER BY timestamp ASC"
-
-        result = client.query(sql)
+        result = client.query(sql, parameters=query_params)
 
         metrics = []
 

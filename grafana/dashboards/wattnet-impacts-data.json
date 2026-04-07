@@ -18,7 +18,7 @@
 	"editable": true,
 	"fiscalYearStartMonth": 0,
 	"graphTooltip": 0,
-	"id": 3,
+	"id": 5,
 	"links": [],
 	"panels": [
 		{
@@ -43,7 +43,7 @@
 			"fieldConfig": {
 				"defaults": {
 					"color": {
-						"mode": "palette-classic"
+						"mode": "continuous-GrYlRd"
 					},
 					"custom": {
 						"axisBorderShow": false,
@@ -51,184 +51,106 @@
 						"axisColorMode": "text",
 						"axisLabel": "",
 						"axisPlacement": "auto",
-						"fillOpacity": 80,
-						"gradientMode": "none",
+						"barAlignment": 0,
+						"barWidthFactor": 0.6,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "scheme",
 						"hideFrom": {
 							"legend": false,
 							"tooltip": false,
 							"viz": false
 						},
-						"lineWidth": 1,
+						"insertNulls": 900000,
+						"lineInterpolation": "smooth",
+						"lineWidth": 2,
+						"pointSize": 10,
 						"scaleDistribution": {
 							"type": "linear"
+						},
+						"showPoints": "auto",
+						"showValues": false,
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
 						},
 						"thresholdsStyle": {
 							"mode": "off"
 						}
 					},
 					"mappings": [],
-					"max": 100,
-					"min": 0,
 					"thresholds": {
 						"mode": "absolute",
 						"steps": [
 							{
 								"color": "green",
 								"value": 0
-							},
-							{
-								"color": "red",
-								"value": 80
 							}
 						]
-					},
-					"unit": "percent"
+					}
 				},
 				"overrides": []
 			},
 			"gridPos": {
-				"h": 20,
-				"w": 12,
+				"h": 6,
+				"w": 8,
 				"x": 0,
 				"y": 1
 			},
 			"id": 1,
 			"interval": "15m",
 			"options": {
-				"barRadius": 0,
-				"barWidth": 0.66,
-				"fullHighlight": false,
-				"groupWidth": 0.69,
 				"legend": {
 					"calcs": [],
-					"displayMode": "list",
+					"displayMode": "table",
 					"placement": "bottom",
 					"showLegend": true
 				},
-				"orientation": "vertical",
-				"showValue": "always",
-				"stacking": "normal",
 				"tooltip": {
 					"hideZeros": false,
 					"mode": "single",
 					"sort": "none"
-				},
-				"xTickLabelRotation": 0,
-				"xTickLabelSpacing": 0
+				}
 			},
 			"pluginVersion": "12.3.2",
+			"repeat": "impact_type",
+			"repeatDirection": "v",
 			"targets": [
 				{
-					"datasource": {
-						"type": "grafana-clickhouse-datasource",
-						"uid": "cfcb14ibbjz7kf"
-					},
-					"editorType": "sql",
-					"format": 0,
-					"meta": {
-						"builderOptions": {
-							"columns": [],
-							"database": "",
-							"limit": 1000,
-							"mode": "list",
-							"queryType": "table",
-							"table": ""
-						}
-					},
-					"pluginVersion": "4.13.0",
-					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' → ', target) AS metric,\n    value as \" \"\nFROM wattnet.flow_share FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
-					"refId": "A"
-				}
-			],
-			"title": "$zone Flow Share (Distribution Vector) (Percentage)",
-			"transparent": true,
-			"type": "barchart"
-		},
-		{
-			"datasource": {
-				"type": "grafana-clickhouse-datasource",
-				"uid": "PDEE91DDB90597936"
-			},
-			"fieldConfig": {
-				"defaults": {
-					"color": {
-						"mode": "palette-classic"
-					},
-					"custom": {
-						"axisBorderShow": false,
-						"axisCenteredZero": false,
-						"axisColorMode": "text",
-						"axisLabel": "",
-						"axisPlacement": "auto",
-						"fillOpacity": 80,
-						"gradientMode": "none",
-						"hideFrom": {
-							"legend": false,
-							"tooltip": false,
-							"viz": false
-						},
-						"lineWidth": 1,
-						"scaleDistribution": {
-							"type": "linear"
-						},
-						"thresholdsStyle": {
-							"mode": "off"
-						}
-					},
-					"mappings": [],
-					"max": 100,
-					"min": 0,
-					"thresholds": {
-						"mode": "absolute",
-						"steps": [
+					"builderOptions": {
+						"columns": [
 							{
-								"color": "green",
-								"value": 0
-							},
-							{
-								"color": "red",
-								"value": 80
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
 							}
-						]
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
 					},
-					"unit": "percent"
-				},
-				"overrides": []
-			},
-			"gridPos": {
-				"h": 20,
-				"w": 12,
-				"x": 12,
-				"y": 1
-			},
-			"id": 4,
-			"interval": "15m",
-			"options": {
-				"barRadius": 0,
-				"barWidth": 0.66,
-				"fullHighlight": false,
-				"groupWidth": 0.69,
-				"legend": {
-					"calcs": [],
-					"displayMode": "list",
-					"placement": "bottom",
-					"showLegend": true
-				},
-				"orientation": "vertical",
-				"showValue": "always",
-				"stacking": "normal",
-				"tooltip": {
-					"hideZeros": false,
-					"mode": "single",
-					"sort": "none"
-				},
-				"xTickLabelRotation": 0,
-				"xTickLabelSpacing": 0
-			},
-			"pluginVersion": "12.3.2",
-			"targets": [
-				{
 					"datasource": {
 						"type": "grafana-clickhouse-datasource",
 						"uid": "cfcb14ibbjz7kf"
@@ -237,23 +159,48 @@
 					"format": 0,
 					"meta": {
 						"builderOptions": {
-							"columns": [],
-							"database": "",
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
 							"limit": 1000,
+							"meta": {},
 							"mode": "list",
-							"queryType": "table",
-							"table": ""
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
 						}
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(source, ' → ', zone) AS metric,\n    value as \" \"\nFROM wattnet.mix_share FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', impact_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_impact FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND impact_type IN (${impact_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
-			"title": "$zone Mix Share (Composition Vector) (Percentage)",
+			"title": "Local $impact_type impact ($scope scope)",
 			"transparent": true,
-			"type": "barchart"
+			"type": "timeseries"
 		},
 		{
 			"datasource": {
@@ -263,7 +210,7 @@
 			"fieldConfig": {
 				"defaults": {
 					"color": {
-						"mode": "palette-classic"
+						"mode": "continuous-GrYlRd"
 					},
 					"custom": {
 						"axisBorderShow": false,
@@ -275,7 +222,7 @@
 						"barWidthFactor": 0.6,
 						"drawStyle": "line",
 						"fillOpacity": 10,
-						"gradientMode": "none",
+						"gradientMode": "scheme",
 						"hideFrom": {
 							"legend": false,
 							"tooltip": false,
@@ -313,233 +260,17 @@
 				"overrides": []
 			},
 			"gridPos": {
-				"h": 11,
-				"w": 12,
-				"x": 0,
-				"y": 21
+				"h": 6,
+				"w": 8,
+				"x": 8,
+				"y": 1
 			},
 			"id": 3,
 			"interval": "15m",
 			"options": {
 				"legend": {
 					"calcs": [],
-					"displayMode": "list",
-					"placement": "bottom",
-					"showLegend": true
-				},
-				"tooltip": {
-					"hideZeros": false,
-					"mode": "single",
-					"sort": "none"
-				}
-			},
-			"pluginVersion": "12.3.2",
-			"repeat": "footprint_type",
-			"repeatDirection": "v",
-			"targets": [
-				{
-					"datasource": {
-						"type": "grafana-clickhouse-datasource",
-						"uid": "cfcb14ibbjz7kf"
-					},
-					"editorType": "sql",
-					"format": 0,
-					"meta": {
-						"builderOptions": {
-							"columns": [],
-							"database": "",
-							"limit": 1000,
-							"mode": "list",
-							"queryType": "table",
-							"table": ""
-						}
-					},
-					"pluginVersion": "4.13.0",
-					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(source, ' → ', zone, ' (', footprint_type, ' / ', scope, ')') AS metric,\n    value as \" \"\nFROM wattnet.footprint_share FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN (${footprint_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC\n",
-					"refId": "A"
-				}
-			],
-			"title": "$zone Global $footprint_type Footprint Composition (Value)",
-			"transparent": true,
-			"type": "timeseries"
-		},
-		{
-			"datasource": {
-				"type": "grafana-clickhouse-datasource",
-				"uid": "PDEE91DDB90597936"
-			},
-			"fieldConfig": {
-				"defaults": {
-					"color": {
-						"mode": "palette-classic"
-					},
-					"custom": {
-						"axisBorderShow": false,
-						"axisCenteredZero": false,
-						"axisColorMode": "text",
-						"axisLabel": "",
-						"axisPlacement": "auto",
-						"barAlignment": 0,
-						"barWidthFactor": 0.6,
-						"drawStyle": "line",
-						"fillOpacity": 10,
-						"gradientMode": "none",
-						"hideFrom": {
-							"legend": false,
-							"tooltip": false,
-							"viz": false
-						},
-						"insertNulls": 900000,
-						"lineInterpolation": "smooth",
-						"lineWidth": 2,
-						"pointSize": 10,
-						"scaleDistribution": {
-							"type": "linear"
-						},
-						"showPoints": "auto",
-						"showValues": false,
-						"spanNulls": false,
-						"stacking": {
-							"group": "A",
-							"mode": "none"
-						},
-						"thresholdsStyle": {
-							"mode": "off"
-						}
-					},
-					"mappings": [],
-					"thresholds": {
-						"mode": "absolute",
-						"steps": [
-							{
-								"color": "green",
-								"value": 0
-							}
-						]
-					}
-				},
-				"overrides": []
-			},
-			"gridPos": {
-				"h": 11,
-				"w": 12,
-				"x": 12,
-				"y": 21
-			},
-			"id": 6,
-			"interval": "15m",
-			"options": {
-				"legend": {
-					"calcs": [],
-					"displayMode": "list",
-					"placement": "bottom",
-					"showLegend": true
-				},
-				"tooltip": {
-					"hideZeros": false,
-					"mode": "single",
-					"sort": "none"
-				}
-			},
-			"pluginVersion": "12.3.2",
-			"targets": [
-				{
-					"datasource": {
-						"type": "grafana-clickhouse-datasource",
-						"uid": "PDEE91DDB90597936"
-					},
-					"editorType": "sql",
-					"format": 0,
-					"meta": {
-						"builderOptions": {
-							"columns": [],
-							"database": "",
-							"limit": 1000,
-							"mode": "list",
-							"queryType": "table",
-							"table": ""
-						}
-					},
-					"pluginVersion": "4.14.0",
-					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(\n        source, ' → ', zone, ' (', footprint_type, ' / ', scope, ')'\n    ) AS metric,\n    value AS \" \"\nFROM wattnet.footprint_share FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND footprint_type IN ('carbon')\n    AND scope IN (${scope:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
-					"refId": "A"
-				}
-			],
-			"title": "$zone Global Carbon Impact Composition (Value) - stress-gCO2/kWh",
-			"transparent": true,
-			"type": "timeseries"
-		},
-		{
-			"datasource": {
-				"type": "grafana-clickhouse-datasource",
-				"uid": "PDEE91DDB90597936"
-			},
-			"fieldConfig": {
-				"defaults": {
-					"color": {
-						"mode": "palette-classic"
-					},
-					"custom": {
-						"axisBorderShow": false,
-						"axisCenteredZero": false,
-						"axisColorMode": "text",
-						"axisLabel": "",
-						"axisPlacement": "auto",
-						"barAlignment": 0,
-						"barWidthFactor": 0.6,
-						"drawStyle": "line",
-						"fillOpacity": 10,
-						"gradientMode": "none",
-						"hideFrom": {
-							"legend": false,
-							"tooltip": false,
-							"viz": false
-						},
-						"insertNulls": 900000,
-						"lineInterpolation": "smooth",
-						"lineWidth": 2,
-						"pointSize": 10,
-						"scaleDistribution": {
-							"type": "linear"
-						},
-						"showPoints": "auto",
-						"showValues": false,
-						"spanNulls": false,
-						"stacking": {
-							"group": "A",
-							"mode": "none"
-						},
-						"thresholdsStyle": {
-							"mode": "off"
-						}
-					},
-					"mappings": [],
-					"thresholds": {
-						"mode": "absolute",
-						"steps": [
-							{
-								"color": "green",
-								"value": 0
-							}
-						]
-					}
-				},
-				"overrides": []
-			},
-			"gridPos": {
-				"h": 11,
-				"w": 12,
-				"x": 12,
-				"y": 32
-			},
-			"id": 7,
-			"interval": "15m",
-			"options": {
-				"legend": {
-					"calcs": [],
-					"displayMode": "list",
+					"displayMode": "table",
 					"placement": "bottom",
 					"showLegend": true
 				},
@@ -556,7 +287,7 @@
 				{
 					"datasource": {
 						"type": "grafana-clickhouse-datasource",
-						"uid": "PDEE91DDB90597936"
+						"uid": "cfcb14ibbjz7kf"
 					},
 					"editorType": "sql",
 					"format": 0,
@@ -570,34 +301,207 @@
 							"table": ""
 						}
 					},
-					"pluginVersion": "4.14.0",
+					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(\n        source, ' → ', zone, ' (', impact_type, ' / ', scope, ')'\n    ) AS metric,\n    value AS \" \"\nFROM wattnet.impact_share FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND impact_type IN (${impact_type:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND value > 0\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', impact_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_impact FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND impact_type IN (${impact_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
-			"title": "$zone Global $impact_type Impact Composition (Value) - stress-l/kWh",
+			"title": "Global $impact_type impact ($scope scope)",
 			"transparent": true,
 			"type": "timeseries"
+		},
+		{
+			"datasource": {
+				"type": "grafana-clickhouse-datasource",
+				"uid": "PDEE91DDB90597936"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic-by-name"
+					},
+					"custom": {
+						"axisBorderShow": false,
+						"axisCenteredZero": false,
+						"axisColorMode": "text",
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"fillOpacity": 80,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"viz": false
+						},
+						"lineWidth": 1,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{
+								"color": "green",
+								"value": 0
+							}
+						]
+					}
+				},
+				"overrides": []
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 8,
+				"x": 16,
+				"y": 1
+			},
+			"id": 4,
+			"interval": "15m",
+			"options": {
+				"barRadius": 0,
+				"barWidth": 1,
+				"fullHighlight": false,
+				"groupWidth": 0.38,
+				"legend": {
+					"calcs": [],
+					"displayMode": "list",
+					"placement": "bottom",
+					"showLegend": true
+				},
+				"orientation": "auto",
+				"showValue": "auto",
+				"stacking": "none",
+				"tooltip": {
+					"hideZeros": false,
+					"mode": "single",
+					"sort": "none"
+				},
+				"xTickLabelRotation": 0,
+				"xTickLabelSpacing": 100
+			},
+			"pluginVersion": "12.3.2",
+			"repeat": "impact_type",
+			"repeatDirection": "v",
+			"targets": [
+				{
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"meta": {
+						"builderOptions": {
+							"columns": [],
+							"database": "",
+							"limit": 1000,
+							"mode": "list",
+							"queryType": "table",
+							"table": ""
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', impact_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_impact FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND impact_type IN (${impact_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "local"
+				},
+				{
+					"builderOptions": {
+						"columns": [
+							{
+								"hint": "time",
+								"name": "timestamp",
+								"type": "DateTime"
+							}
+						],
+						"database": "wattnet",
+						"filters": [
+							{
+								"condition": "AND",
+								"filterType": "custom",
+								"hint": "time",
+								"key": "",
+								"operator": "WITH IN DASHBOARD TIME RANGE",
+								"type": "datetime"
+							}
+						],
+						"limit": 1000,
+						"meta": {},
+						"mode": "list",
+						"orderBy": [
+							{
+								"default": true,
+								"dir": "ASC",
+								"hint": "time",
+								"name": ""
+							}
+						],
+						"queryType": "timeseries",
+						"table": "factor"
+					},
+					"datasource": {
+						"type": "grafana-clickhouse-datasource",
+						"uid": "cfcb14ibbjz7kf"
+					},
+					"editorType": "sql",
+					"format": 0,
+					"hide": false,
+					"meta": {
+						"builderOptions": {
+							"columns": [
+								{
+									"hint": "time",
+									"name": "timestamp",
+									"type": "DateTime"
+								}
+							],
+							"database": "wattnet",
+							"filters": [
+								{
+									"condition": "AND",
+									"filterType": "custom",
+									"hint": "time",
+									"key": "",
+									"operator": "WITH IN DASHBOARD TIME RANGE",
+									"type": "datetime"
+								}
+							],
+							"limit": 1000,
+							"meta": {},
+							"mode": "list",
+							"orderBy": [
+								{
+									"default": true,
+									"dir": "ASC",
+									"hint": "time",
+									"name": ""
+								}
+							],
+							"queryType": "timeseries",
+							"table": "factor"
+						}
+					},
+					"pluginVersion": "4.13.0",
+					"queryType": "timeseries",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', impact_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_impact\nWHERE\n    zone IN (${zone:singlequote})\n    AND impact_type IN (${impact_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"refId": "global"
+				}
+			],
+			"title": "Comparison $impact_type impact ($scope scope)",
+			"transparent": true,
+			"type": "barchart"
 		}
 	],
 	"preload": false,
 	"refresh": "",
 	"schemaVersion": 42,
-	"tags": [
-		"wattnet",
-		"zone",
-		"distribution",
-		"percentage",
-		"footprints",
-		"local",
-		"share",
-		"flows",
-		"mix",
-		"composition",
-		"global",
-		"impacts"
-	],
+	"tags": ["wattnet", "impacts", "local", "global"],
 	"templating": {
 		"list": [
 			{
@@ -609,13 +513,13 @@
 					"type": "grafana-clickhouse-datasource",
 					"uid": "PDEE91DDB90597936"
 				},
-				"definition": "SELECT DISTINCT zone\nFROM wattnet.footprint_share\nORDER BY zone",
+				"definition": "SELECT DISTINCT zone\nFROM wattnet.local_impact\nORDER BY zone",
 				"includeAll": true,
 				"label": "Zone",
 				"multi": true,
 				"name": "zone",
 				"options": [],
-				"query": "SELECT DISTINCT zone\nFROM wattnet.footprint_share\nORDER BY zone",
+				"query": "SELECT DISTINCT zone\nFROM wattnet.local_impact\nORDER BY zone",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -629,32 +533,14 @@
 					"type": "grafana-clickhouse-datasource",
 					"uid": "PDEE91DDB90597936"
 				},
-				"definition": "SELECT DISTINCT footprint_type\nFROM wattnet.footprint_share\nORDER BY footprint_type",
+				"definition": "SELECT DISTINCT impact_type\nFROM wattnet.local_impact\nORDER BY impact_type",
 				"includeAll": true,
-				"label": "Footprint Type",
+				"label": "impact Type",
 				"multi": true,
-				"name": "footprint_type",
-				"options": [],
-				"query": "SELECT DISTINCT footprint_type\nFROM wattnet.footprint_share\nORDER BY footprint_type",
-				"refresh": 2,
-				"regex": "",
-				"type": "query"
-			},
-			{
-				"current": {
-					"text": "water",
-					"value": "water"
-				},
-				"datasource": {
-					"type": "grafana-clickhouse-datasource",
-					"uid": "PDEE91DDB90597936"
-				},
-				"definition": "SELECT DISTINCT impact_type FROM wattnet.impact_share ORDER BY impact_type",
-				"label": "Impact Type",
 				"name": "impact_type",
 				"options": [],
-				"query": "SELECT DISTINCT impact_type FROM wattnet.impact_share ORDER BY impact_type",
-				"refresh": 1,
+				"query": "SELECT DISTINCT impact_type\nFROM wattnet.local_impact\nORDER BY impact_type",
+				"refresh": 2,
 				"regex": "",
 				"type": "query"
 			},
@@ -667,13 +553,13 @@
 					"type": "grafana-clickhouse-datasource",
 					"uid": "PDEE91DDB90597936"
 				},
-				"definition": "SELECT DISTINCT scope\nFROM wattnet.footprint_share\nORDER BY scope",
+				"definition": "SELECT DISTINCT scope\nFROM wattnet.local_impact\nORDER BY scope",
 				"includeAll": true,
-				"label": "Footprint Scope",
+				"label": "impact Scope",
 				"multi": true,
 				"name": "scope",
 				"options": [],
-				"query": "SELECT DISTINCT scope\nFROM wattnet.footprint_share\nORDER BY scope",
+				"query": "SELECT DISTINCT scope\nFROM wattnet.local_impact\nORDER BY scope",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -681,19 +567,19 @@
 			{
 				"current": {
 					"text": "All",
-					"value": ["$__all"]
+					"value": "$__all"
 				},
 				"datasource": {
 					"type": "grafana-clickhouse-datasource",
 					"uid": "PDEE91DDB90597936"
 				},
-				"definition": "SELECT DISTINCT valid\nFROM wattnet.footprint_share\nORDER BY valid",
+				"definition": "SELECT DISTINCT valid\nFROM wattnet.local_impact\nORDER BY valid",
 				"includeAll": true,
 				"label": "Valid",
 				"multi": true,
 				"name": "valid",
 				"options": [],
-				"query": "SELECT DISTINCT valid\nFROM wattnet.footprint_share\nORDER BY valid",
+				"query": "SELECT DISTINCT valid\nFROM wattnet.local_impact\nORDER BY valid",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -735,7 +621,7 @@
 	},
 	"timepicker": {},
 	"timezone": "utc",
-	"title": "wattnet zone share",
-	"uid": "aevihxu0q8740c",
+	"title": "wattnet impacts data",
+	"uid": "ceh76nxs701s0g",
 	"version": 1
 }

@@ -107,7 +107,6 @@ TABLE_SCHEMAS = {
     "local_score": [
         ("timestamp", "DateTime"),
         ("value", "Float64"),
-        ("score_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
         ("updated_at", "DateTime"),
@@ -117,7 +116,6 @@ TABLE_SCHEMAS = {
     "global_score": [
         ("timestamp", "DateTime"),
         ("value", "Float64"),
-        ("score_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
         ("updated_at", "DateTime"),

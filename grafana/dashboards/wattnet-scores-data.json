@@ -42,7 +42,7 @@
 			"fieldConfig": {
 				"defaults": {
 					"color": {
-						"mode": "continuous-BlPu"
+						"mode": "continuous-RdYlGr"
 					},
 					"custom": {
 						"axisBorderShow": false,
@@ -115,8 +115,6 @@
 				}
 			},
 			"pluginVersion": "12.3.2",
-			"repeat": "score_type",
-			"repeatDirection": "v",
 			"targets": [
 				{
 					"builderOptions": {
@@ -195,11 +193,11 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
-			"title": "Local $score_type score ($scope scope)",
+			"title": "Local GreenScore ($scope scope)",
 			"transparent": true,
 			"type": "timeseries"
 		},
@@ -211,7 +209,7 @@
 			"fieldConfig": {
 				"defaults": {
 					"color": {
-						"mode": "continuous-BlPu"
+						"mode": "continuous-RdYlGr"
 					},
 					"custom": {
 						"axisBorderShow": false,
@@ -284,8 +282,6 @@
 				}
 			},
 			"pluginVersion": "12.3.2",
-			"repeat": "score_type",
-			"repeatDirection": "v",
 			"targets": [
 				{
 					"datasource": {
@@ -306,11 +302,11 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "A"
 				}
 			],
-			"title": "Global $score_type score ($scope scope)",
+			"title": "Global GreenScore score ($scope scope)",
 			"transparent": true,
 			"type": "timeseries"
 		},
@@ -391,8 +387,6 @@
 				"xTickLabelSpacing": 100
 			},
 			"pluginVersion": "12.3.2",
-			"repeat": "score_type",
-			"repeatDirection": "v",
 			"targets": [
 				{
 					"datasource": {
@@ -413,7 +407,7 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ',  scope) AS metric,\n    value as \" \"\nFROM wattnet.local_score FINAL\nWHERE\n    zone IN (${zone:singlequote})\n     AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "local"
 				},
 				{
@@ -494,11 +488,11 @@
 					},
 					"pluginVersion": "4.13.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ', score_type, ' / ', scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score\nWHERE\n    zone IN (${zone:singlequote})\n    AND score_type IN (${score_type:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone, ' / ',  scope) AS metric,\n    value as \" \"\nFROM wattnet.global_score\nWHERE\n    zone IN (${zone:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND scope IN (${scope:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY time ASC",
 					"refId": "global"
 				}
 			],
-			"title": "Comparison $score_type score ($scope scope)",
+			"title": "Comparison GreenScore score ($scope scope)",
 			"transparent": true,
 			"type": "barchart"
 		}
@@ -506,7 +500,7 @@
 	"preload": false,
 	"refresh": "",
 	"schemaVersion": 42,
-	"tags": ["wattnet", "scores", "local", "global"],
+	"tags": ["wattnet", "greenscore", "local", "global"],
 	"templating": {
 		"list": [
 			{
@@ -525,26 +519,6 @@
 				"name": "zone",
 				"options": [],
 				"query": "SELECT DISTINCT zone\nFROM wattnet.local_score\nORDER BY zone",
-				"refresh": 2,
-				"regex": "",
-				"type": "query"
-			},
-			{
-				"current": {
-					"text": "All",
-					"value": "$__all"
-				},
-				"datasource": {
-					"type": "grafana-clickhouse-datasource",
-					"uid": "PDEE91DDB90597936"
-				},
-				"definition": "SELECT DISTINCT score_type\nFROM wattnet.local_score\nORDER BY score_type",
-				"includeAll": true,
-				"label": "score Type",
-				"multi": true,
-				"name": "score_type",
-				"options": [],
-				"query": "SELECT DISTINCT score_type\nFROM wattnet.local_score\nORDER BY score_type",
 				"refresh": 2,
 				"regex": "",
 				"type": "query"
@@ -626,7 +600,7 @@
 	},
 	"timepicker": {},
 	"timezone": "utc",
-	"title": "wattnet scores data",
+	"title": "wattnet greenscore data",
 	"uid": "ceh76nxs701s0r",
 	"version": 3
 }

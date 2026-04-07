@@ -377,25 +377,33 @@ class ClickHouseClient(BaseStorageClient):
         """
         client = self._new_client()
 
-        # Determine time range with dynamic fallback (UTC now aligned to interval)
-        now = self._align_floor(datetime.now(timezone.utc))
+        # Determine the time range with dynamic fallback (UTC now aligned to interval)
+        now = datetime.now(timezone.utc)
         interval = timedelta(minutes=self.interval_minutes)
 
         if start is None and end is None:
-            start = now
+            # Both start and end are None → use the current bucket
+            start = self._align_floor(now)
             end = start + interval
 
         elif start is None and end is not None:
-            end = self._align_floor(end)
+            # Only end is provided → ceil to include the last bucket
+            end = self._align_ceil(end)
             start = end - interval
 
         elif start is not None and end is None:
+            # Only start is provided → floor to align
             start = self._align_floor(start)
             end = start + interval
 
         else:
+            # Both start and end are provided → floor start, ceil end
             start = self._align_floor(start)
-            end = self._align_floor(end)
+            end = self._align_ceil(end)
+
+        # Ensure the range covers at least one bucket to avoid empty results
+        if start >= end:
+            end = start + interval
 
         # Build SELECT query
         sql = f"""

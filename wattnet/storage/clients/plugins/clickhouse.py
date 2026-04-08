@@ -1,4 +1,6 @@
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from threading import Event, Lock, Thread
 from typing import List
 
 import clickhouse_connect
@@ -182,18 +184,23 @@ TABLE_SCHEMAS = {
 
 # -------------------------------------------------------------------
 # Label name normalization
-# Used to map metadata keys to internal DB schema
 # -------------------------------------------------------------------
 COLUMN_NAME_MAP = {
     "from": "from_zone",
     "to": "to_zone",
 }
 
-# Reverse mapping used when reading data back
 REVERSE_COLUMN_NAME_MAP = {v: k for k, v in COLUMN_NAME_MAP.items()}
 
 
 class ClickHouseClient(BaseStorageClient):
+
+    # ------------------------------------------------------------------
+    # Write buffer tuning
+    # Flush when either condition is met: max rows OR max age (seconds).
+    # ------------------------------------------------------------------
+    _FLUSH_INTERVAL_SECONDS = 2
+    _FLUSH_MAX_ROWS = 5_000
 
     def __init__(
         self,
@@ -204,10 +211,6 @@ class ClickHouseClient(BaseStorageClient):
         database=settings.database,
         interval_minutes=settings.timeseries_step_minutes,
     ):
-        """
-        Initialize the ClickHouse client and create all required tables
-        using ReplacingMergeTree.
-        """
         self.host = host
         self.port = port
         self.user = user
@@ -215,70 +218,86 @@ class ClickHouseClient(BaseStorageClient):
         self.database = database
         self.interval_minutes = interval_minutes
 
-        # Create database and tables if they don't exist
-        client = self._new_root_client()
-        client.command(f"CREATE DATABASE IF NOT EXISTS {database}")
+        # 1. Bootstrap: create DB + tables using a root client (no database)
+        self._bootstrap_schema()
 
-        # Create all tables defined in TABLE_SCHEMAS
-        for table_name, cols in TABLE_SCHEMAS.items():
-            col_defs = ",\n    ".join([f"{name} {typ}" for name, typ in cols])
+        # 2. Main client — created AFTER the DB exists
+        # clickhouse_connect is thread-safe and reuses HTTP keep-alive internally.
+        self._client = clickhouse_connect.get_client(
+            host=host,
+            port=port,
+            username=user,
+            password=password,
+            database=database,
+        )
 
-            # Dynamic ORDER BY: always include timestamp first for best query performance
-            order_cols = ["timestamp"]
+        # 3. Write buffer
+        self._buffer: dict[str, list] = defaultdict(list)
+        self._buffer_lock = Lock()
 
-            # Add preferred ordering columns if present in each table
-            preferred = [
-                "zone",
-                "from_zone",
-                "to_zone",
-                "factor_type",
-                "production_type",
-                "footprint_type",
-                "impact_type",
-                "score_type",
-                "scope",
-                "source",
-                "target",
-            ]
-            for p in preferred:
-                if p in [c[0] for c in cols]:
-                    order_cols.append(p)
+        # 4. Flush thread — a permanent daemon thread is more stable than
+        # chained Timers for long-running services (no drift, no overlaps).
+        self._stop_event = Event()
+        self._flush_thread = Thread(target=self._flush_loop, daemon=True)
+        self._flush_thread.start()
 
-            sql = f"""
-            CREATE TABLE IF NOT EXISTS {self.database}.{table_name} (
-                {col_defs}
-            )
-            ENGINE = ReplacingMergeTree(updated_at)
-            ORDER BY ({", ".join(order_cols)})
-            """
+    # ------------------------------------------------------------------
+    # SCHEMA BOOTSTRAP
+    # ------------------------------------------------------------------
 
-            client.command(sql)
+    def _bootstrap_schema(self) -> None:
+        """Create the database and all tables using a temporary root client.
 
-    def _new_root_client(self):
-        return clickhouse_connect.get_client(
+        Must run before self._client is created so the database exists when
+        clickhouse_connect initialises the session.
+        """
+        root = clickhouse_connect.get_client(
             host=self.host,
             port=self.port,
             username=self.user,
             password=self.password,
-            # No default database for root client
         )
+        try:
+            root.command(f"CREATE DATABASE IF NOT EXISTS {self.database}")
 
-    def _new_client(self):
-        """Create a fresh ClickHouse client instance."""
-        return clickhouse_connect.get_client(
-            host=self.host,
-            port=self.port,
-            username=self.user,
-            password=self.password,
-            database=self.database,
-        )
+            for table_name, cols in TABLE_SCHEMAS.items():
+                col_defs = ",\n    ".join(f"{name} {typ}" for name, typ in cols)
+
+                order_cols = ["timestamp"]
+                preferred = [
+                    "zone",
+                    "from_zone",
+                    "to_zone",
+                    "factor_type",
+                    "production_type",
+                    "footprint_type",
+                    "impact_type",
+                    "scope",
+                    "source",
+                    "target",
+                ]
+                for p in preferred:
+                    if p in {c[0] for c in cols}:
+                        order_cols.append(p)
+
+                root.command(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {self.database}.{table_name} (
+                        {col_defs}
+                    )
+                    ENGINE = ReplacingMergeTree(updated_at)
+                    ORDER BY ({", ".join(order_cols)})
+                """
+                )
+        finally:
+            root.close()
 
     # ------------------------------------------------------------------
     # TIME ALIGNMENT
     # ------------------------------------------------------------------
 
     def _align_floor(self, dt: datetime) -> datetime:
-        """Round down to nearest interval_minutes."""
+        """Round down to the nearest interval boundary."""
         discard = timedelta(
             minutes=dt.minute % self.interval_minutes,
             seconds=dt.second,
@@ -286,58 +305,70 @@ class ClickHouseClient(BaseStorageClient):
         )
         return dt - discard
 
-    def _align_ceil(self, dt: datetime) -> datetime:
-        """Round up to nearest interval_minutes."""
-        floored = self._align_floor(dt)
-        if floored == dt:
-            return dt
-        return floored + timedelta(minutes=self.interval_minutes)
-
-    # ------------------------------------------------------------------
-    # TIME RANGE RESOLUTION
-    # ------------------------------------------------------------------
-
     def _resolve_time_range(
         self,
         start: datetime | None,
         end: datetime | None,
-        now: datetime | None = None,  # injectable for deterministic testing
+        now: datetime | None = None,
     ) -> tuple[datetime, datetime]:
         """
-        Returns an aligned (start, end) pair covering at least one interval bucket.
+        Resolve (start, end) into an aligned half-open interval [start, end).
 
-        Cases:
-            (None, None) → current aligned bucket
-            (None, end)  → one bucket ending at ceil(end)
-            (start, None)→ one bucket starting at floor(start)
-            (start, end) → floor(start) to ceil(end); raises if range is invalid
+        end is always treated as EXCLUSIVE — the query returns rows where
+        timestamp >= start AND timestamp < end.
+
+                         given           resolved
+          ──────────────────────────────────────────────────────────────
+          (None,  None) → (floor(now),   floor(now) + I)   one bucket
+          (None,  end)  → (floor(end),   floor(end) + I)   one bucket
+          (start, None) → (floor(start), floor(start) + I) one bucket
+          (start, end)  → (floor(start), floor(end))       exact range
+
+        In the (start, end) case end is NOT expanded — floor(end) is the
+        exclusive upper boundary as the caller intended.
+
+        Examples with I=15min:
+          start=00:00, end=00:15 → [00:00, 00:15) → only the 00:00 bucket
+          start=00:00, end=00:30 → [00:00, 00:30) → buckets 00:00 and 00:15
+
+        floor() is a no-op on already-aligned timestamps, so collectors and
+        forecast sliding windows that pre-compute exact boundaries are safe.
         """
-        interval = timedelta(minutes=self.interval_minutes)
         now = now or datetime.now(timezone.utc)
+        interval = timedelta(minutes=self.interval_minutes)
 
-        match (start, end):
-            case (None, None):
-                start = self._align_floor(now)
+        if start is None and end is None:
+            start = self._align_floor(now)
+            end = start + interval
+        elif start is None:
+            start = self._align_floor(end)
+            end = start + interval
+        elif end is None:
+            start = self._align_floor(start)
+            end = start + interval
+        else:
+            start = self._align_floor(start)
+            # end is exclusive but we want to INCLUDE the bucket that contains end.
+            # floor(end) + interval = "the bucket end falls into, exclusive upper bound".
+            # Special case: if end is exactly on a boundary (e.g. end=00:15 with I=15),
+            # floor(end) == end, so + interval would include the NEXT bucket — not what
+            # we want. In that case use floor(end) directly (end itself is the exclusive bound).
+            floored_end = self._align_floor(end)
+            end = floored_end if floored_end == end else floored_end + interval
+            # If still collapsed (start == end), force at least one bucket.
+            if end <= start:
                 end = start + interval
 
-            case (None, _):
-                end = self._align_ceil(end)
-                start = end - interval
+        if end <= start:
+            raise ValueError(
+                f"Resolved time range is empty or inverted: start={start}, end={end}"
+            )
 
-            case (_, None):
-                start = self._align_floor(start)
-                end = start + interval
-
-            case (_, _):
-                start = self._align_floor(start)
-                end = self._align_ceil(end)
-                if end <= start:
-                    raise ValueError(
-                        f"Invalid time range after alignment: start={start}, end={end}"
-                    )
-
-        assert end > start, f"Invariant violated: start={start} >= end={end}"
         return start, end
+
+    # ------------------------------------------------------------------
+    # QUERY BUILDER
+    # ------------------------------------------------------------------
 
     def _build_query(
         self,
@@ -347,22 +378,20 @@ class ClickHouseClient(BaseStorageClient):
         labels: dict | None = None,
     ) -> tuple[str, dict]:
         """
-        Returns a parameterized (sql, params) pair for clickhouse_connect.
-
-        Label filters are validated against TABLE_SCHEMAS to prevent
-        unknown-column injection. Values are passed as query parameters.
+        Build a parameterized SELECT for clickhouse_connect.
+        Column names are validated against TABLE_SCHEMAS; values are parameters.
         """
         params = {
             "start": start.strftime("%Y-%m-%d %H:%M:%S"),
             "end": end.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        sql = f"""
-        SELECT *
-        FROM {self.database}.{metric_name} FINAL
-        WHERE timestamp >= toDateTime({{start:String}})
-          AND timestamp < toDateTime({{end:String}})
-        """
+        sql = (
+            f"SELECT *"
+            f" FROM {self.database}.{metric_name} FINAL"
+            f" WHERE timestamp >= toDateTime({{start:String}})"
+            f"   AND timestamp <  toDateTime({{end:String}})"
+        )
 
         if labels:
             valid_cols = {c[0] for c in TABLE_SCHEMAS[metric_name]}
@@ -378,111 +407,162 @@ class ClickHouseClient(BaseStorageClient):
         return sql, params
 
     # ------------------------------------------------------------------
-    #                           WRITE METRICS
+    # WRITE — buffered batch path
     # ------------------------------------------------------------------
-    def write_metrics(self, metrics: List[Metric]):
+
+    def _flush_loop(self) -> None:
+        """Permanent daemon thread: flush every _FLUSH_INTERVAL_SECONDS.
+
+        Using a blocking Event instead of chained Timers avoids timer drift
+        and guarantees a clean final flush on shutdown (flush() sets the event).
         """
-        Insert a list of Metric objects into their respective ClickHouse
-        tables. Metrics are grouped per table name.
+        while not self._stop_event.wait(timeout=self._FLUSH_INTERVAL_SECONDS):
+            self._flush_all()
+        # Final flush on shutdown
+        self._flush_all()
+
+    def _flush_all(self) -> None:
+        """Drain the entire buffer and send to ClickHouse."""
+        with self._buffer_lock:
+            snapshot = dict(self._buffer)
+            self._buffer.clear()
+
+        for table_name, rows in snapshot.items():
+            if rows:
+                try:
+                    self._flush_table(table_name, rows)
+                except Exception as e:
+                    # Log and continue — a failed flush must not kill the thread
+                    import logging
+
+                    logging.getLogger(__name__).error(
+                        "Flush failed for table %s (%d rows): %s",
+                        table_name,
+                        len(rows),
+                        e,
+                        exc_info=True,
+                    )
+
+    def _flush_table(self, table_name: str, rows: list) -> None:
+        """Insert a pre-built batch of rows into ClickHouse."""
+        columns = [c[0] for c in TABLE_SCHEMAS[table_name]]
+        self._client.insert(table_name, rows, column_names=columns)
+
+    def _build_row(self, table_name: str, m: Metric) -> list:
+        """Serialize a Metric into a row list matching TABLE_SCHEMAS column order."""
+        metadata = m.metadata or {}
+        row = []
+        for col, col_type in TABLE_SCHEMAS[table_name]:
+            if col == "timestamp":
+                ts = m.timestamp
+                if isinstance(ts, str):
+                    ts = datetime.fromisoformat(ts)
+                row.append(ts)
+            elif col == "value":
+                row.append(float(m.value))
+            elif col == "updated_at":
+                row.append(datetime.now(timezone.utc))
+            else:
+                metadata_key = REVERSE_COLUMN_NAME_MAP.get(col, col)
+                v = metadata.get(metadata_key)
+                if v is None:
+                    row.append(None if "Int" in col_type else "")
+                else:
+                    row.append(str(v))
+        return row
+
+    def write_metrics(self, metrics: List[Metric]) -> None:
+        """
+        Buffer metrics for batch insertion.
+
+        Rows are grouped by table and appended to the in-memory buffer.
+        The buffer is flushed automatically every _FLUSH_INTERVAL_SECONDS
+        or immediately when a single table exceeds _FLUSH_MAX_ROWS.
         """
         if not metrics:
             return
 
-        # Group metrics by destination table
-        metrics_by_table = {}
+        by_table: dict[str, list[Metric]] = defaultdict(list)
         for m in metrics:
-            metrics_by_table.setdefault(m.name, []).append(m)
+            by_table[m.name].append(m)
 
-        client = self._new_client()
+        flush_batches: list[tuple[str, list]] = []
 
-        for table_name, items in metrics_by_table.items():
-            if table_name not in TABLE_SCHEMAS:
-                continue
+        with self._buffer_lock:
+            for table_name, items in by_table.items():
+                if table_name not in TABLE_SCHEMAS:
+                    continue
 
-            columns = [c[0] for c in TABLE_SCHEMAS[table_name]]
-            rows = []
+                rows = [self._build_row(table_name, m) for m in items]
+                self._buffer[table_name].extend(rows)
 
-            for m in items:
-                metadata = m.metadata or {}
-                row = []
+                if len(self._buffer[table_name]) >= self._FLUSH_MAX_ROWS:
+                    # Collect oversized tables; flush OUTSIDE the lock below
+                    flush_batches.append((table_name, self._buffer.pop(table_name)))
 
-                for col, col_type in TABLE_SCHEMAS[table_name]:
+        # I/O happens outside the lock — other writers are never blocked by network
+        for table_name, rows in flush_batches:
+            try:
+                self._flush_table(table_name, rows)
+            except Exception as e:
+                import logging
 
-                    if col == "timestamp":
-                        ts = m.timestamp
-                        # Accept ISO strings too
-                        if isinstance(ts, str):
-                            ts = datetime.fromisoformat(ts)
-                        row.append(ts)
+                logging.getLogger(__name__).error(
+                    "Immediate flush failed for table %s (%d rows): %s",
+                    table_name,
+                    len(rows),
+                    e,
+                    exc_info=True,
+                )
 
-                    elif col == "value":
-                        row.append(float(m.value))
+    def flush(self) -> None:
+        """Force an immediate flush and stop the background flush thread.
 
-                    elif col == "updated_at":
-                        row.append(datetime.now(timezone.utc))  # UTC-aware
-
-                    else:
-                        # Normalize metadata keys (from → from_zone)
-                        metadata_key = REVERSE_COLUMN_NAME_MAP.get(col, col)
-                        v = metadata.get(metadata_key)
-
-                        # Default values based on ClickHouse type
-                        if v is None:
-                            if "String" in col_type:
-                                row.append("")
-                            elif "Int" in col_type:
-                                row.append(None)
-                            else:
-                                row.append("")
-                        else:
-                            row.append(str(v))
-
-                rows.append(row)
-
-            # Perform batch insert
-            client.insert(table_name, rows, column_names=columns)
+        Call this on graceful shutdown to avoid losing buffered rows.
+        After calling flush() the client should not be used anymore.
+        """
+        self._stop_event.set()
+        self._flush_thread.join(timeout=10)
 
     # ------------------------------------------------------------------
-    #                           READ METRICS
+    # READ — Arrow/DataFrame path for fast deserialization
     # ------------------------------------------------------------------
+
     def read_metrics(
         self,
         metric_name: str,
         start: datetime | None,
         end: datetime | None,
-        labels=None,
+        labels: dict | None = None,
         params=None,
-        _now: datetime | None = None,  # injectable for tests
-    ):
+        _now: datetime | None = None,
+    ) -> list[Metric]:
         """
-        Read metrics from a ClickHouse table within a time interval.
-        Supports:
-            - dynamic fallback time windows if start/end are None
-            - filtering by label metadata
-        """
-        client = self._new_client()
+        Read metrics from ClickHouse within a resolved time window.
 
+        Uses query_df (Arrow-backed) instead of query for faster row
+        deserialization at high row counts.
+        """
         start, end = self._resolve_time_range(start, end, now=_now)
         sql, query_params = self._build_query(metric_name, start, end, labels)
 
-        result = client.query(sql, parameters=query_params)
+        df = self._client.query_df(sql, parameters=query_params)
+
+        if df.empty:
+            return []
 
         metrics = []
+        col_names = list(df.columns)
 
-        for row in result.result_rows:
+        for row in df.itertuples(index=False):
             ts = row[0]
             val = row[1]
 
-            # Build metadata dict with remaining columns
-            metadata = dict(zip(result.column_names[2:], row[2:]))
+            metadata = dict(zip(col_names[2:], row[2:]))
+            normalized = {
+                REVERSE_COLUMN_NAME_MAP.get(k, k): v for k, v in metadata.items()
+            }
 
-            # Reverse normalized names (from_zone → from)
-            normalized = {}
-            for k, v in metadata.items():
-                external = REVERSE_COLUMN_NAME_MAP.get(k, k)
-                normalized[external] = v
-
-            # Convert year to int when possible
             if "year" in normalized:
                 try:
                     normalized["year"] = int(normalized["year"])
@@ -493,7 +573,7 @@ class ClickHouseClient(BaseStorageClient):
                 Metric(
                     metric_type=MetricType(metric_name),
                     value=val,
-                    timestamp=ts.replace(tzinfo=timezone.utc),
+                    timestamp=ts.to_pydatetime().replace(tzinfo=timezone.utc),
                     metadata=normalized,
                 )
             )

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from threading import Event, Lock, Thread
+from threading import Event, Lock, Thread, local
 from typing import List
 
 import clickhouse_connect
@@ -221,15 +221,10 @@ class ClickHouseClient(BaseStorageClient):
         # 1. Bootstrap: create DB + tables using a root client (no database)
         self._bootstrap_schema()
 
-        # 2. Main client — created AFTER the DB exists
-        # clickhouse_connect is thread-safe and reuses HTTP keep-alive internally.
-        self._client = clickhouse_connect.get_client(
-            host=host,
-            port=port,
-            username=user,
-            password=password,
-            database=database,
-        )
+        # 2. Thread-local client storage — each thread gets its own connection.
+        # clickhouse_connect does NOT support concurrent queries on the same session,
+        # so we create one client per thread on first use via _get_client().
+        self._local = local()
 
         # 3. Write buffer
         self._buffer: dict[str, list] = defaultdict(list)
@@ -240,6 +235,27 @@ class ClickHouseClient(BaseStorageClient):
         self._stop_event = Event()
         self._flush_thread = Thread(target=self._flush_loop, daemon=True)
         self._flush_thread.start()
+
+    # ------------------------------------------------------------------
+    # CLIENT — one instance per thread
+    # ------------------------------------------------------------------
+
+    def _get_client(self):
+        """Return a clickhouse client for the current thread.
+
+        Creates a new connection on first call per thread and reuses it
+        on subsequent calls. This avoids the ProgrammingError raised when
+        concurrent queries share the same session.
+        """
+        if not hasattr(self._local, "client"):
+            self._local.client = clickhouse_connect.get_client(
+                host=self.host,
+                port=self.port,
+                username=self.user,
+                password=self.password,
+                database=self.database,
+            )
+        return self._local.client
 
     # ------------------------------------------------------------------
     # SCHEMA BOOTSTRAP
@@ -272,6 +288,7 @@ class ClickHouseClient(BaseStorageClient):
                     "production_type",
                     "footprint_type",
                     "impact_type",
+                    "score_type",
                     "scope",
                     "source",
                     "target",
@@ -446,7 +463,7 @@ class ClickHouseClient(BaseStorageClient):
     def _flush_table(self, table_name: str, rows: list) -> None:
         """Insert a pre-built batch of rows into ClickHouse."""
         columns = [c[0] for c in TABLE_SCHEMAS[table_name]]
-        self._client.insert(table_name, rows, column_names=columns)
+        self._get_client().insert(table_name, rows, column_names=columns)
 
     def _build_row(self, table_name: str, m: Metric) -> list:
         """Serialize a Metric into a row list matching TABLE_SCHEMAS column order."""
@@ -546,7 +563,7 @@ class ClickHouseClient(BaseStorageClient):
         start, end = self._resolve_time_range(start, end, now=_now)
         sql, query_params = self._build_query(metric_name, start, end, labels)
 
-        df = self._client.query_df(sql, parameters=query_params)
+        df = self._get_client().query_df(sql, parameters=query_params)
 
         if df.empty:
             return []

@@ -62,6 +62,18 @@ TABLE_SCHEMAS = {
         ("zone", "LowCardinality(String)"),
         ("zone_status", "LowCardinality(String)"),
     ],
+    "zone_mix_generation": [
+        ("timestamp", "DateTime"),
+        ("value", "Float64"),
+        ("data_state", "LowCardinality(String)"),
+        ("datasource", "LowCardinality(String)"),
+        ("production_type", "LowCardinality(String)"),
+        ("unit", "LowCardinality(String)"),
+        ("valid", "LowCardinality(String)"),
+        ("updated_at", "DateTime"),
+        ("zone", "LowCardinality(String)"),
+        ("zone_status", "LowCardinality(String)"),
+    ],
     "local_footprint": [
         ("timestamp", "DateTime"),
         ("value", "Float64"),

@@ -15,6 +15,12 @@
 This repository contains the Docker Compose configuration for setting up a metrics storage backend.
 Additionally, it includes a Python client interface for for a unified backend database interface.
 
+## License
+
+This repository is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+See the [LICENSE](LICENSE) file for more details.
+
 ## Funding and acknowledgments
 
 This work is funded by the European Union’s Horizon Europe research and innovation programme through the **[GreenDIGIT](https://greendigit-project.eu/)** project, under grant agreement **[101131207](https://cordis.europa.eu/project/id/101131207)**.

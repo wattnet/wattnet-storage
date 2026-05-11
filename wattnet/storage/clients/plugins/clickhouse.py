@@ -17,7 +17,7 @@ from wattnet.storage.settings import settings
 TABLE_SCHEMAS = {
     "zone_generation": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),
         ("datasource", "LowCardinality(String)"),
         ("production_type", "LowCardinality(String)"),
@@ -29,7 +29,7 @@ TABLE_SCHEMAS = {
     ],
     "zone_import": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),
         ("datasource", "LowCardinality(String)"),
         ("from_zone", "LowCardinality(String)"),
@@ -41,7 +41,7 @@ TABLE_SCHEMAS = {
     ],
     "zone_export": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),
         ("datasource", "LowCardinality(String)"),
         ("to_zone", "LowCardinality(String)"),
@@ -53,7 +53,7 @@ TABLE_SCHEMAS = {
     ],
     "zone_load": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),
         ("datasource", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -64,7 +64,7 @@ TABLE_SCHEMAS = {
     ],
     "zone_mix_generation": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),
         ("datasource", "LowCardinality(String)"),
         ("production_type", "LowCardinality(String)"),
@@ -76,7 +76,7 @@ TABLE_SCHEMAS = {
     ],
     "local_footprint": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("footprint_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -87,7 +87,7 @@ TABLE_SCHEMAS = {
     ],
     "global_footprint": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("footprint_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -98,7 +98,7 @@ TABLE_SCHEMAS = {
     ],
     "local_impact": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("impact_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -109,7 +109,7 @@ TABLE_SCHEMAS = {
     ],
     "global_impact": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("impact_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
@@ -120,7 +120,7 @@ TABLE_SCHEMAS = {
     ],
     "local_score": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("scope", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
         ("updated_at", "DateTime"),
@@ -129,7 +129,7 @@ TABLE_SCHEMAS = {
     ],
     "global_score": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("scope", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
         ("updated_at", "DateTime"),
@@ -138,7 +138,7 @@ TABLE_SCHEMAS = {
     ],
     "factor": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("factor_type", "LowCardinality(String)"),
         ("production_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
@@ -150,7 +150,7 @@ TABLE_SCHEMAS = {
     ],
     "flow_share": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("target", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
@@ -160,7 +160,7 @@ TABLE_SCHEMAS = {
     ],
     "mix_share": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("source", "LowCardinality(String)"),
         ("unit", "LowCardinality(String)"),
         ("valid", "LowCardinality(String)"),
@@ -170,7 +170,7 @@ TABLE_SCHEMAS = {
     ],
     "footprint_share": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("footprint_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("source", "LowCardinality(String)"),
@@ -182,7 +182,7 @@ TABLE_SCHEMAS = {
     ],
     "impact_share": [
         ("timestamp", "DateTime"),
-        ("value", "Float64"),
+        ("value", "Float32"),
         ("impact_type", "LowCardinality(String)"),
         ("scope", "LowCardinality(String)"),
         ("source", "LowCardinality(String)"),
@@ -309,15 +309,13 @@ class ClickHouseClient(BaseStorageClient):
                     if p in {c[0] for c in cols}:
                         order_cols.append(p)
 
-                root.command(
-                    f"""
+                root.command(f"""
                     CREATE TABLE IF NOT EXISTS {self.database}.{table_name} (
                         {col_defs}
                     )
                     ENGINE = ReplacingMergeTree(updated_at)
                     ORDER BY ({", ".join(order_cols)})
-                """
-                )
+                """)
         finally:
             root.close()
 

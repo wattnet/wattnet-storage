@@ -9,6 +9,7 @@ services:
             - clickhouse_data:/var/lib/clickhouse/
             - clickhouse_logs:/var/log/clickhouse-server/
             - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d:ro
+        restart: unless-stopped
 
     grafana:
         image: grafana/grafana:latest

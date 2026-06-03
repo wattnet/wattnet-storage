@@ -1,0 +1,22 @@
+<clickhouse>
+    <!-- Disable unnecessary logs -->
+    <trace_log remove="1"/>
+    <text_log remove="1"/>
+    <part_log remove="1"/>
+    <processors_profile_log remove="1"/>
+    <asynchronous_metric_log remove="1"/>
+
+    <!-- Query log: keep 7 days -->
+    <query_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </query_log>
+
+    <!-- Metric log: keep 3 days -->
+    <metric_log>
+        <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+    </metric_log>
+
+    <!-- No size limit for DROP/TRUNCATE -->
+    <max_table_size_to_drop>0</max_table_size_to_drop>
+    <max_partition_size_to_drop>0</max_partition_size_to_drop>
+</clickhouse>

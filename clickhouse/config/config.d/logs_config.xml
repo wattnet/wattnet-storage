@@ -1,4 +1,8 @@
 <clickhouse>
+
+    <!-- Force IPv4 only -->
+    <listen_host>0.0.0.0</listen_host>
+
     <!-- Disable unnecessary logs -->
     <trace_log remove="1"/>
     <text_log remove="1"/>

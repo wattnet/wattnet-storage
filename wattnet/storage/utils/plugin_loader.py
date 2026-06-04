@@ -1,11 +1,11 @@
-"""Plugin loader"""
+"""Plugin loader for stevedore-based storage client extensions."""
 
 import stevedore
 
 STORAGE_CLIENTS_NAMESPACE = "wattnet.storage.clients"
 
 
-def _get_names(namespace) -> frozenset:
+def _get_names(namespace: str) -> frozenset:
     """Get the names of the plug-ins in the specified namespace.
 
     :param namespace: The namespace to search for plug-ins
@@ -14,11 +14,11 @@ def _get_names(namespace) -> frozenset:
     :return: The names of the plug-ins in the specified namespace
     :rtype: frozenset
     """
-    mgr = stevedore.ExtensionManager(namespace=namespace)
+    mgr: stevedore.ExtensionManager = stevedore.ExtensionManager(namespace=namespace)
     return frozenset(mgr.names())
 
 
-def _get_extensions(namespace):
+def _get_extensions(namespace: str) -> dict:
     """Get the extensions of the plug-ins in the specified namespace.
 
     :param namespace: The namespace to search for plug-ins
@@ -27,11 +27,13 @@ def _get_extensions(namespace):
     :return: The extensions of the plug-ins in the specified namespace
     :rtype: dict
     """
-    mgr = stevedore.ExtensionManager(namespace=namespace, propagate_map_exceptions=True)
+    mgr: stevedore.ExtensionManager = stevedore.ExtensionManager(
+        namespace=namespace, propagate_map_exceptions=True
+    )
     return dict(mgr.map(lambda ext: (ext.entry_point.name, ext.plugin)))
 
 
-def get_storage_clients_names():
+def get_storage_clients_names() -> frozenset:
     """Get the names of the storage clients.
 
     :return: The names of the energy clients
@@ -40,7 +42,7 @@ def get_storage_clients_names():
     return _get_names(STORAGE_CLIENTS_NAMESPACE)
 
 
-def get_storage_clients_extensions():
+def get_storage_clients_extensions() -> dict:
     """Get the extensions of the storage clients.
 
     :return: The extensions of the storage clients

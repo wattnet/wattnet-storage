@@ -1,7 +1,9 @@
+"""ClickHouse storage client with buffered writes and Arrow-backed reads."""
+
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from threading import Event, Lock, Thread, local
-from typing import List
+from typing import Any, List, cast
 
 import clickhouse_connect
 
@@ -204,8 +206,15 @@ COLUMN_NAME_MAP = {
 
 REVERSE_COLUMN_NAME_MAP = {v: k for k, v in COLUMN_NAME_MAP.items()}
 
+_METRIC_QUERY_TEMPLATE = (
+    "SELECT * FROM {table} FINAL"
+    " WHERE timestamp >= toDateTime({start:String})"
+    "   AND timestamp <  toDateTime({end:String})"
+)
+
 
 class ClickHouseClient(BaseStorageClient):
+    """ClickHouse storage client with a write buffer and thread-local connections."""
 
     # ------------------------------------------------------------------
     # Write buffer tuning
@@ -223,6 +232,7 @@ class ClickHouseClient(BaseStorageClient):
         database=settings.database,
         interval_minutes=settings.timeseries_step_minutes,
     ):
+        """Initialize the ClickHouse client with connection parameters."""
         self.host = host
         self.port = port
         self.user = user
@@ -368,7 +378,7 @@ class ClickHouseClient(BaseStorageClient):
             start = self._align_floor(now)
             end = start + interval
         elif start is None:
-            start = self._align_floor(end)
+            start = self._align_floor(cast(datetime, end))
             end = start + interval
         elif end is None:
             start = self._align_floor(start)
@@ -376,10 +386,10 @@ class ClickHouseClient(BaseStorageClient):
         else:
             start = self._align_floor(start)
             # end is exclusive but we want to INCLUDE the bucket that contains end.
-            # floor(end) + interval = "the bucket end falls into, exclusive upper bound".
-            # Special case: if end is exactly on a boundary (e.g. end=00:15 with I=15),
-            # floor(end) == end, so + interval would include the NEXT bucket — not what
-            # we want. In that case use floor(end) directly (end itself is the exclusive bound).
+            # floor(end) + interval gives the exclusive upper bound for that bucket.
+            # Special case: if end is exactly on a boundary (e.g. end=00:15, I=15),
+            # floor(end) == end and adding interval would include the next bucket.
+            # In that case use floor(end) directly as the exclusive bound.
             floored_end = self._align_floor(end)
             end = floored_end if floored_end == end else floored_end + interval
             # If still collapsed (start == end), force at least one bucket.
@@ -404,20 +414,20 @@ class ClickHouseClient(BaseStorageClient):
         end: datetime,
         labels: dict | None = None,
     ) -> tuple[str, dict]:
-        """
-        Build a parameterized SELECT for clickhouse_connect.
+        """Build a parameterized SELECT for clickhouse_connect.
+
         Column names are validated against TABLE_SCHEMAS; values are parameters.
         """
+        if metric_name not in TABLE_SCHEMAS:
+            raise ValueError(f"Unknown metric table: {metric_name!r}")
+
         params = {
             "start": start.strftime("%Y-%m-%d %H:%M:%S"),
             "end": end.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        sql = (
-            f"SELECT *"
-            f" FROM {self.database}.{metric_name} FINAL"
-            f" WHERE timestamp >= toDateTime({{start:String}})"
-            f"   AND timestamp <  toDateTime({{end:String}})"
+        sql = _METRIC_QUERY_TEMPLATE.replace(
+            "{table}", self.database + "." + metric_name
         )
 
         if labels:
@@ -478,7 +488,7 @@ class ClickHouseClient(BaseStorageClient):
     def _build_row(self, table_name: str, m: Metric) -> list:
         """Serialize a Metric into a row list matching TABLE_SCHEMAS column order."""
         metadata = m.metadata or {}
-        row = []
+        row: list[Any] = []
         for col, col_type in TABLE_SCHEMAS[table_name]:
             if col == "timestamp":
                 ts = m.timestamp
@@ -558,10 +568,10 @@ class ClickHouseClient(BaseStorageClient):
     def read_metrics(
         self,
         metric_name: str,
-        start: datetime | None,
-        end: datetime | None,
+        start: datetime | None = None,
+        end: datetime | None = None,
         labels: dict | None = None,
-        params=None,
+        params: Any = None,
         _now: datetime | None = None,
     ) -> list[Metric]:
         """

@@ -1,7 +1,11 @@
+"""Metric type enumeration."""
+
 from enum import Enum
 
 
 class MetricType(str, Enum):
+    """Enumeration of all supported metric types."""
+
     ZONE_GENERATION = "zone_generation"
     ZONE_IMPORT = "zone_import"
     ZONE_EXPORT = "zone_export"

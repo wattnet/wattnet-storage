@@ -1,3 +1,5 @@
+"""Logging utilities with colorized console output and optional file handler."""
+
 import logging
 
 from wattnet.storage.settings import settings
@@ -16,10 +18,12 @@ class CustomFormatter(logging.Formatter):
     RESET = "\x1b[0m"
 
     def __init__(self, fmt: str):
+        """Initialize the formatter with a format string."""
         super().__init__()
         self.fmt = fmt
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
+        """Format a log record with ANSI color codes."""
         color = self.COLORS.get(record.levelno, self.RESET)
         formatter = logging.Formatter(
             color + self.fmt + self.RESET, datefmt="%d-%m-%Y %H:%M:%S"
@@ -34,7 +38,6 @@ def _get_level(level: str) -> int:
 
 def get(name: str) -> logging.Logger:
     """Return a configured logger."""
-
     logger = logging.getLogger(name)
     logger.handlers.clear()  # prevent duplicate handlers
 

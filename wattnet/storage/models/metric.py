@@ -1,3 +1,5 @@
+"""Metric domain model."""
+
 from datetime import datetime
 
 from wattnet.storage.models.metric_type import MetricType
@@ -10,10 +12,10 @@ class Metric:
         self,
         metric_type: MetricType,
         value: float,
-        timestamp: datetime = None,
-        metadata: dict = None,
+        timestamp: datetime | None = None,
+        metadata: dict | None = None,
     ):
-        """Constructor.
+        """Initialize a Metric instance.
 
         :param metric_type: The type of metric
         :type metric_type: MetricType
@@ -24,7 +26,6 @@ class Metric:
         :param metadata: Additional metadata for the metric
         :type metadata: dict
         """
-
         # If timestamp is None, set it to now
         if timestamp is None:
             timestamp = datetime.now()
@@ -35,9 +36,11 @@ class Metric:
         self.metadata = metadata or {}
 
     def __str__(self):
+        """Return a human-readable string representation."""
         return f"{self.name}: {self.value} ({self.metadata}) at {self.timestamp}"
 
     def __repr__(self):
+        """Return an unambiguous string representation."""
         return self.__str__()
 
     def add_metadata(self, key: str, value: str) -> None:
@@ -49,7 +52,6 @@ class Metric:
         :param value: The value of the metadata
         :type value: str
         """
-
         self.metadata[key] = value
 
     def to_dict(self) -> dict:
@@ -58,7 +60,6 @@ class Metric:
         :return: The metric as a dictionary
         :rtype: dict
         """
-
         return {
             "name": self.name,
             "value": self.value,

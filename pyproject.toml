@@ -71,7 +71,7 @@ twine = ">=4.0.2,<7.0.0"
 testpaths = ["tests/unit"]
 addopts = "--tb=short"
 markers = [
-    "integration: requires a running ClickHouse instance (docker compose -f docker-compose.test.yml up -d)",
+    "integration: requires a running ClickHouse instance (docker compose -f tests/docker-compose.test.yml up -d)",
 ]
 
 [tool.coverage.run]

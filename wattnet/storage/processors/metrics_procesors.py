@@ -1,3 +1,5 @@
+"""Metric filtering and processing functions."""
+
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
@@ -12,13 +14,13 @@ LOG = log.get(__name__)
 
 
 def filter_best_metrics(metrics: List[Metric]) -> List[Metric]:
-    """
-    For each logical metric point (timestamp + metric_type + labels except 'valid' and 'zone_status'),
-    keep only the best metric according to:
+    """Filter metrics, keeping the best version of each logical data point.
+
+    For each logical metric point (timestamp + metric_type + labels except
+    'valid' and 'zone_status'), keep only the best metric according to:
       1. valid=True preferred over valid=False
       2. zone_status priority: complete > preview > missing
     """
-
     LOG.debug(f"Filtering {len(metrics)} metrics to find the best ones")
 
     if not metrics:
@@ -30,7 +32,7 @@ def filter_best_metrics(metrics: List[Metric]) -> List[Metric]:
 
     metrics_by_key: Dict[Tuple, List[Metric]] = defaultdict(list)
     for m in metrics:
-        # key = timestamp + metric_type + labels that are “common”
+        # key = timestamp + metric_type + labels that are "common"
         key = (m.timestamp, m.name) + tuple(
             m.metadata.get(k) for k in sorted(common_keys)
         )

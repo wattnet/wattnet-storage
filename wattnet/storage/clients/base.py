@@ -1,5 +1,7 @@
-import datetime
+"""Abstract base class for storage clients."""
+
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 
 from wattnet.storage.models import Metric
 
@@ -11,10 +13,10 @@ class BaseStorageClient(metaclass=ABCMeta):
     def read_metrics(
         self,
         metric_name: str,
-        start: datetime = None,
-        end: datetime = None,
-        labels: dict = None,
-        params: dict = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        labels: dict | None = None,
+        params: dict | None = None,
     ) -> list[Metric]:
         """Read metrics from the storage backend.
 

@@ -1,3 +1,5 @@
+"""High-level repository for reading and writing Metric objects."""
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -12,11 +14,10 @@ LOG = log.get(__name__)
 
 
 class MetricsRepository:
-    """
-    Repository for storing and querying Metric objects in the storage backend.
-    """
+    """Repository for storing and querying Metric objects in the storage backend."""
 
     def __init__(self):
+        """Initialize the MetricsRepository and connect to the storage backend."""
         LOG.info("Initializing MetricsRepository...")
         self.storage_manager = StorageClientsManager()
         # Set step size in seconds
@@ -29,8 +30,7 @@ class MetricsRepository:
         end: Optional[datetime] = None,
         labels: Optional[dict] = None,
     ) -> List[Metric]:
-        """
-        Query metrics from storage.
+        """Query metrics from storage.
 
         :param metric_name: Name of the metric (MetricType.value)
         :param start: Start datetime
@@ -38,7 +38,6 @@ class MetricsRepository:
         :param labels: Optional labels to filter metrics
         :return: List of Metric objects
         """
-
         # Step 1: Query raw metrics
         metrics: List[Metric] = self.storage_manager.read_metrics(
             metric_name=metric_name,
@@ -50,8 +49,7 @@ class MetricsRepository:
         return best_metrics
 
     def write_metrics(self, metrics: List[Metric]) -> None:
-        """
-        Write a list of Metric objects to the storage backend.
+        """Write a list of Metric objects to the storage backend.
 
         :param metrics: List of Metric objects
         """

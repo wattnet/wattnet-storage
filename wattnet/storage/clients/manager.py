@@ -1,3 +1,5 @@
+"""Storage clients manager: dispatches reads/writes to all configured clients."""
+
 from datetime import datetime
 
 from wattnet.storage.models import Metric
@@ -9,6 +11,7 @@ LOG = log.get(__name__)
 
 
 class StorageClientsManager:
+    """Manages a pool of storage client plugins and dispatches I/O to all of them."""
 
     def __init__(self):
         """Initialize the StorageClientsManager."""
@@ -33,9 +36,8 @@ class StorageClientsManager:
             (i, plugin_loader.get_storage_clients_extensions()[i])
             for i in available_clients
         ]
-        LOG.info(
-            f"Loaded storage client plugins: {[i[0] for i in self.storage_client_plugins]}"
-        )
+        plugin_names = [name for name, _ in self.storage_client_plugins]
+        LOG.info("Loaded storage client plugins: %s", plugin_names)
 
         # Start one instance of each storage client
         self.storage_clients = {}
@@ -47,10 +49,10 @@ class StorageClientsManager:
     def read_metrics(
         self,
         metric_name: str,
-        start: datetime = None,
-        end: datetime = None,
-        labels: dict = None,
-        params: dict = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        labels: dict | None = None,
+        params: dict | None = None,
     ) -> list[Metric]:
         """Read metrics from all storage clients.
 

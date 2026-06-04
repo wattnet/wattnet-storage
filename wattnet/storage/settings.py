@@ -1,3 +1,5 @@
+"""Application settings loaded from environment variables and .env files."""
+
 import os
 from pathlib import Path
 

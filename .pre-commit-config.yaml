@@ -38,3 +38,10 @@ repos:
         types: [python]
         pass_filenames: false
         args: [-p, wattnet.storage]
+
+      - id: deptry
+        name: deptry
+        entry: poetry run deptry
+        language: system
+        pass_filenames: false
+        args: [wattnet]

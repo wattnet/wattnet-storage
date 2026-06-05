@@ -1,17 +1,23 @@
 [tool.poetry]
 name = "wattnet-storage"
 version = "1.0.0"
-description = "Storage Client for wattnet"
+description = "Plugin-based time-series storage client for Wattnet energy and carbon metrics"
 license = "Apache-2.0"
 authors = ["Jaime Iglesias Blanco <iglesias@ifca.es>"]
 readme = "README.md"
 homepage = "https://wattnet.eu"
 repository = "https://github.com/wattnet/wattnet-storage"
+keywords = [
+    "energy", "electricity", "carbon", "carbon-footprint",
+    "time-series", "metrics", "storage", "clickhouse",
+    "sustainability", "wattnet",
+]
 packages = [{ include = "wattnet" }]
 include = ["config/.env.example"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
@@ -22,6 +28,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Database",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
@@ -32,11 +40,10 @@ clickhouse = "wattnet.storage.clients.plugins.clickhouse:ClickHouseClient"
 python = ">=3.10,<3.15"
 pydantic-settings = "^2.13.1"
 stevedore = "^5.7.0"
-requests = "^2.33.0"
-clickhouse-connect = {version = "^0.10.0", extras = ["pandas"]}
+clickhouse-connect = {version = "^1.0", extras = ["pandas"]}
 
 [tool.poetry.group.test.dependencies]
-pytest = "^8.0"
+pytest = "^9.0.3"
 pytest-cov = "^7.0.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -55,14 +62,16 @@ pydocstyle = "^6.1"
 
 [tool.poetry.group.format.dependencies]
 black = ">=22.3,<27.0"
-isort = "^5.13"
+isort = "^8.0"
 
 [tool.poetry.group.security.dependencies]
 bandit = "^1.9.0"
 
+[tool.poetry.group.deps.dependencies]
+deptry = ">=0.23"
+
 [tool.poetry.group.types.dependencies]
-mypy = "^1.19.0"
-types-requests = "^2.31.0"
+mypy = "^2.0"
 
 [tool.poetry.group.release.dependencies]
 twine = ">=4.0.2,<7.0.0"
@@ -80,6 +89,23 @@ omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.black]
 target-version = ["py310", "py311", "py312", "py313", "py314"]
+
+[tool.deptry]
+known_first_party = ["wattnet"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+    "pytest", "pytest-cov",
+    "tox", "tox-gh-actions",
+    "pre-commit",
+    "flake8", "flake8-bugbear", "flake8-docstrings", "flake8-typing-imports", "flake8-colors",
+    "pep8-naming", "pydocstyle",
+    "black", "isort",
+    "bandit",
+    "mypy",
+    "twine",
+    "deptry",
+]
 
 [tool.isort]
 profile = "black"

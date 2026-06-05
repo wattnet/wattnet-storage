@@ -20,6 +20,12 @@ def filter_best_metrics(metrics: List[Metric]) -> List[Metric]:
     'valid' and 'zone_status'), keep only the best metric according to:
       1. valid=True preferred over valid=False
       2. zone_status priority: complete > preview > missing
+
+    Note: depending on the storage backend, this deduplication may already be
+    enforced at the database level via update policies (e.g. ReplacingMergeTree
+    in ClickHouse). This layer exists as a safety net regardless, since relying
+    on backend-specific behaviour would couple the repository logic to a
+    particular storage implementation.
     """
     LOG.debug(f"Filtering {len(metrics)} metrics to find the best ones")
 

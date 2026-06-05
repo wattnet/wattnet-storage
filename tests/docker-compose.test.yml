@@ -5,8 +5,11 @@ services:
         ports:
             - "18123:8123"
             - "19000:9000"
+        environment:
+            - CLICKHOUSE_USER=default
+            - CLICKHOUSE_PASSWORD=
         volumes:
-            - ./clickhouse/config/users.d:/etc/clickhouse-server/users.d:ro
+            - ../clickhouse/config/users.d:/etc/clickhouse-server/users.d
         tmpfs:
             - /var/lib/clickhouse
             - /var/log/clickhouse-server

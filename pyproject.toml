@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "wattnet-storage"
 version = "1.0.0"
-description = "Plugin-based time-series storage client for Wattnet energy and carbon metrics"
+description = "Extensible plugin-based client for unified wattnet time-series metric storage across multiple backends."
 license = "Apache-2.0"
 authors = ["Jaime Iglesias Blanco <iglesias@ifca.es>"]
 readme = "README.md"

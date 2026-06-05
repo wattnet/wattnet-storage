@@ -146,72 +146,9 @@ results = repo.query_metrics(
 | `FOOTPRINT_SHARE`     | `footprint_share`     | Share attributed to carbon footprint    |
 | `IMPACT_SHARE`        | `impact_share`        | Share attributed to carbon impact       |
 
-## Development
+## Contributing
 
-Install all dependency groups:
-
-```bash
-poetry install --with dev,test,lint,format,types,security
-```
-
-Run unit tests:
-
-```bash
-pytest
-```
-
-Run integration tests (requires a running ClickHouse instance):
-
-```bash
-docker compose -f tests/docker-compose.test.yml up -d
-pytest -m integration
-```
-
-Run the full tox matrix (lint, type-check, security, tests):
-
-```bash
-tox
-```
-
-### Adding a new storage backend
-
-Implement `BaseStorageClient` in your package:
-
-```python
-from datetime import datetime
-from wattnet.storage.clients.base import BaseStorageClient
-from wattnet.storage.models import Metric
-
-class MyBackendClient(BaseStorageClient):
-
-    def read_metrics(
-        self,
-        metric_name: str,
-        start: datetime | None = None,
-        end: datetime | None = None,
-        labels: dict | None = None,
-        params: dict | None = None,
-    ) -> list[Metric]:
-        ...
-
-    def write_metrics(self, metrics: list[Metric]) -> None:
-        ...
-```
-
-Register it as a `wattnet.storage.clients` entry point in your `pyproject.toml`:
-
-```toml
-[tool.poetry.plugins."wattnet.storage.clients"]
-mybackend = "mypackage.client:MyBackendClient"
-```
-
-Then activate it via configuration:
-
-```bash
-STORAGE_CLIENTS=["mybackend"]
-```
-
-`StorageClientsManager` will discover and load the plugin automatically at startup.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, code style, how to run the tests, and how to add a new storage backend.
 
 ## License
 

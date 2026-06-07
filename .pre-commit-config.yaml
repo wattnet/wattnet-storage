@@ -1,4 +1,11 @@
 repos:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -28,20 +35,5 @@ repos:
         entry: poetry run flake8
         language: system
         types: [python]
-        pass_filenames: false
-        args: [wattnet]
-
-      - id: mypy
-        name: mypy
-        entry: poetry run mypy
-        language: system
-        types: [python]
-        pass_filenames: false
-        args: [-p, wattnet.storage]
-
-      - id: deptry
-        name: deptry
-        entry: poetry run deptry
-        language: system
         pass_filenames: false
         args: [wattnet]

@@ -47,10 +47,17 @@ jobs:
       - name: Run tox
         run: tox
 
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.14'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+
   integration:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
       - uses: actions/checkout@v6

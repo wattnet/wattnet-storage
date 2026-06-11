@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from wattnet.storage.config import StorageConfig
 from wattnet.storage.models import Metric, MetricType
 from wattnet.storage.repository import MetricsRepository
-from wattnet.storage.settings import settings
 
 
 @pytest.fixture
@@ -19,18 +19,28 @@ def mock_manager():
 
 
 @pytest.fixture
-def repo(mock_manager):
-    return MetricsRepository()
+def config():
+    return StorageConfig(storage_clients=[])
+
+
+@pytest.fixture
+def repo(mock_manager, config):
+    return MetricsRepository(config)
 
 
 class TestMetricsRepositoryInit:
-    def test_creates_storage_manager(self, mock_manager):
-        r = MetricsRepository()
+    def test_creates_storage_manager(self, mock_manager, config):
+        r = MetricsRepository(config)
         assert r.storage_manager is mock_manager
 
-    def test_step_derived_from_settings(self, mock_manager):
-        r = MetricsRepository()
-        assert r.step == int(settings.timeseries_step_minutes) * 60
+    def test_step_derived_from_config(self, mock_manager):
+        cfg = StorageConfig(timeseries_step_minutes=30)
+        r = MetricsRepository(cfg)
+        assert r.step == 30 * 60
+
+    def test_step_default_is_15_minutes(self, mock_manager, config):
+        r = MetricsRepository(config)
+        assert r.step == 15 * 60
 
 
 class TestQueryMetrics:
@@ -42,7 +52,9 @@ class TestQueryMetrics:
         start = datetime(2024, 1, 1, tzinfo=timezone.utc)
         end = datetime(2024, 1, 2, tzinfo=timezone.utc)
         mock_manager.read_metrics.return_value = []
-        repo.query_metrics("zone_generation", start=start, end=end, labels={"zone": "ES"})
+        repo.query_metrics(
+            "zone_generation", start=start, end=end, labels={"zone": "ES"}
+        )
         mock_manager.read_metrics.assert_called_once_with(
             metric_name="zone_generation",
             start=start,

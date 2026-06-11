@@ -1,13 +1,18 @@
 """Abstract base class for storage clients."""
 
+import typing
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
+
+from pydantic_settings import BaseSettings
 
 from wattnet.storage.models import Metric
 
 
 class BaseStorageClient(metaclass=ABCMeta):
     """Base class for storage clients."""
+
+    config_class: "typing.ClassVar[type[BaseSettings]]"
 
     @abstractmethod
     def read_metrics(

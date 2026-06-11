@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from wattnet.storage.clients.manager import StorageClientsManager
+from wattnet.storage.config import StorageConfig
 from wattnet.storage.models.metric import Metric
 from wattnet.storage.processors import filter_best_metrics
-from wattnet.storage.settings import settings
 from wattnet.storage.utils import log
 
 # Get logger
@@ -16,12 +16,11 @@ LOG = log.get(__name__)
 class MetricsRepository:
     """Repository for storing and querying Metric objects in the storage backend."""
 
-    def __init__(self):
+    def __init__(self, config: StorageConfig):
         """Initialize the MetricsRepository and connect to the storage backend."""
         LOG.info("Initializing MetricsRepository...")
-        self.storage_manager = StorageClientsManager()
-        # Set step size in seconds
-        self.step = int(settings.timeseries_step_minutes) * 60
+        self.storage_manager = StorageClientsManager(config)
+        self.step = config.timeseries_step_minutes * 60
 
     def query_metrics(
         self,

@@ -1,9 +1,10 @@
 """Storage clients manager: dispatches reads/writes to all configured clients."""
 
 from datetime import datetime
+from typing import Any
 
+from wattnet.storage.config import StorageConfig
 from wattnet.storage.models import Metric
-from wattnet.storage.settings import settings
 from wattnet.storage.utils import log, plugin_loader
 
 # Get logger
@@ -13,12 +14,19 @@ LOG = log.get(__name__)
 class StorageClientsManager:
     """Manages a pool of storage client plugins and dispatches I/O to all of them."""
 
-    def __init__(self):
+    def __init__(self, config: StorageConfig):
         """Initialize the StorageClientsManager."""
-        LOG.info("Initializing StorageClientsManager")
+        LOG.info(
+            "Initializing StorageClientsManager"
+            " — clients=%s timeseries_step_minutes=%d",
+            config.storage_clients,
+            config.timeseries_step_minutes,
+        )
+
+        self.storage_clients: dict[str, Any] = {}
 
         # Get the list of available storage clients from config
-        available_clients = settings.storage_clients
+        available_clients = config.storage_clients
 
         # Check that we have at least one storage client configured
         if not available_clients:
@@ -32,18 +40,17 @@ class StorageClientsManager:
                 raise ImportError(f"Storage client '{client}' is not installed")
 
         # Load storage client extensions
-        self.storage_client_plugins = [
+        client_plugins = [
             (i, plugin_loader.get_storage_clients_extensions()[i])
             for i in available_clients
         ]
-        plugin_names = [name for name, _ in self.storage_client_plugins]
+        plugin_names = [name for name, _ in client_plugins]
         LOG.info("Loaded storage client plugins: %s", plugin_names)
 
         # Start one instance of each storage client
-        self.storage_clients = {}
-        for client_name, client_plugin in self.storage_client_plugins:
+        for client_name, client_plugin in client_plugins:
             LOG.info(f"Starting storage client '{client_name}'")
-            self.storage_clients[client_name] = client_plugin()
+            self.storage_clients[client_name] = client_plugin(config)
         LOG.info("Storage Client loaded: %s " % ",".join(self.storage_clients.keys()))
 
     def read_metrics(

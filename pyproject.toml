@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wattnet-storage"
-version = "1.0.0"
+version = "1.1.0"
 description = "Extensible plugin-based client for unified wattnet time-series metric storage across multiple backends."
 license = "Apache-2.0"
 authors = ["Jaime Iglesias Blanco <iglesias@ifca.es>"]

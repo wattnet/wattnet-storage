@@ -126,7 +126,7 @@ Configuration precedence for ClickHouse is:
 2. `.env` file values (`CLICKHOUSE_*`) — loaded by the consuming application
 3. Code defaults in `ClickHouseConfig` — lowest priority
 
-`ClickHouseConfig` does not read `.env` files directly. Consuming applications (wattnet-api, wattnet-core) instantiate `ClickHouseConfig(_env_file=".env")` in their `plugin_settings` mechanism and pass the resolved values to `StorageConfig.plugin_configs`, achieving the priority order above automatically. This means a process-level environment variable (e.g. set in Docker Compose or Kubernetes) always wins over a `.env` file entry.
+`ClickHouseConfig` does not read `.env` files directly. Consuming applications (`wattnet-api`, `wattnet-core` or `wattnet-forecast`) instantiate `ClickHouseConfig(_env_file=".env")` in their `plugin_settings` mechanism and pass the resolved values to `StorageConfig.plugin_configs`, achieving the priority order above automatically. This means a process-level environment variable (e.g. set in Docker Compose or Kubernetes) always wins over a `.env` file entry.
 
 `StorageConfig.plugin_configs["clickhouse"]` is the highest-priority override but is intended for programmatic use only (e.g. tests or one-off scripts); in normal deployments the values come from the environment.
 

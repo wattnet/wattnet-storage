@@ -228,13 +228,11 @@ If you use `wattnet-api`, `wattnet-core` or `wattnet-forecast`, their `setup_log
 
 ## Related Projects
 
-Other Wattnet modules that use `wattnet-storage` as their persistence layer:
+The following Wattnet components use `wattnet-storage` as their persistence layer:
 
-| Repository                                                      | Description                                                                             |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [wattnet-api](https://github.com/wattnet/wattnet-api)           | RESTful API exposing real-time, historical, and forecasted electricity footprint data   |
-| [wattnet-core](https://github.com/wattnet/wattnet-core)         | Core service that computes carbon and water footprints from electricity generation data |
-| [wattnet-forecast](https://github.com/wattnet/wattnet-forecast) | Forecasting service for electricity carbon footprint across European zones              |
+- [**wattnet-api**](https://github.com/wattnet/wattnet-api): RESTful API exposing real-time, historical, and forecasted electricity footprint data.
+- [**wattnet-core**](https://github.com/wattnet/wattnet-core): Core service that computes carbon and water footprints from electricity generation data.
+- [**wattnet-forecast**](https://github.com/wattnet/wattnet-forecast): Forecasting service for electricity carbon footprint across European zones.
 
 ## Contributing
 

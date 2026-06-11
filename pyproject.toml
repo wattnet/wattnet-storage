@@ -9,6 +9,7 @@ homepage = "https://wattnet.eu"
 repository = "https://github.com/wattnet/wattnet-storage"
 keywords = [
     "energy", "electricity", "carbon", "carbon-footprint",
+    "water", "water-footprint", "water-impact", "greenscore",
     "time-series", "metrics", "storage", "clickhouse",
     "sustainability", "wattnet",
 ]
@@ -36,11 +37,13 @@ classifiers = [
 [tool.poetry.plugins."wattnet.storage.clients"]
 clickhouse = "wattnet.storage.clients.plugins.clickhouse:ClickHouseClient"
 
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.15"
-pydantic-settings = "^2.13.1"
 stevedore = "^5.7.0"
 clickhouse-connect = {version = "^1.0", extras = ["pandas"]}
+pydantic = "^2.0"
+pydantic-settings = "^2.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^9.0.3"

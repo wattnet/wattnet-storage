@@ -8,8 +8,26 @@ from wattnet.storage.clients.plugins.clickhouse import (
     REVERSE_COLUMN_NAME_MAP,
     TABLE_SCHEMAS,
     ClickHouseClient,
+    ClickHouseConfig,
 )
+from wattnet.storage.config import StorageConfig
 from wattnet.storage.models import Metric, MetricType
+
+
+def _make_config(**kwargs) -> StorageConfig:
+    ch_kwargs = {
+        "host": kwargs.pop("clickhouse_host", "localhost"),
+        "port": kwargs.pop("clickhouse_port", 8123),
+        "user": kwargs.pop("clickhouse_user", "default"),
+        "password": kwargs.pop("clickhouse_password", ""),
+        "database": kwargs.pop("database", "test"),
+    }
+    return StorageConfig(
+        timeseries_step_minutes=kwargs.pop("timeseries_step_minutes", 15),
+        plugin_configs={"clickhouse": ch_kwargs},
+        **kwargs,
+    )
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -27,14 +45,7 @@ def mock_ch_connect():
 @pytest.fixture
 def ch(mock_ch_connect):
     """ClickHouseClient with mocked DB; flush thread stopped after test."""
-    client = ClickHouseClient(
-        host="localhost",
-        port=8123,
-        user="default",
-        password="",
-        database="test",
-        interval_minutes=15,
-    )
+    client = ClickHouseClient(config=_make_config())
     yield client
     client._stop_event.set()
     client._flush_thread.join(timeout=1)
@@ -142,18 +153,22 @@ class TestAlignFloor:
         assert ch._align_floor(dt) == expected
 
     def test_30_minute_interval(self, mock_ch_connect):
-        client = ClickHouseClient(interval_minutes=30)
-        client._stop_event.set()
-        client._flush_thread.join(timeout=1)
-        dt = datetime(2024, 1, 1, 12, 20, 0)
-        assert client._align_floor(dt) == datetime(2024, 1, 1, 12, 0, 0)
+        client = ClickHouseClient(config=_make_config(timeseries_step_minutes=30))
+        try:
+            dt = datetime(2024, 1, 1, 12, 20, 0)
+            assert client._align_floor(dt) == datetime(2024, 1, 1, 12, 0, 0)
+        finally:
+            client._stop_event.set()
+            client._flush_thread.join(timeout=1)
 
     def test_60_minute_interval(self, mock_ch_connect):
-        client = ClickHouseClient(interval_minutes=60)
-        client._stop_event.set()
-        client._flush_thread.join(timeout=1)
-        dt = datetime(2024, 1, 1, 12, 45, 30)
-        assert client._align_floor(dt) == datetime(2024, 1, 1, 12, 0, 0)
+        client = ClickHouseClient(config=_make_config(timeseries_step_minutes=60))
+        try:
+            dt = datetime(2024, 1, 1, 12, 45, 30)
+            assert client._align_floor(dt) == datetime(2024, 1, 1, 12, 0, 0)
+        finally:
+            client._stop_event.set()
+            client._flush_thread.join(timeout=1)
 
     def test_preserves_timezone(self, ch):
         dt = datetime(2024, 1, 1, 12, 7, 0, tzinfo=timezone.utc)
@@ -453,15 +468,41 @@ class TestWriteMetrics:
 
 
 class TestResolveTimeRangeErrors:
-    def test_zero_interval_raises_value_error(self, mock_ch_connect):
-        client = ClickHouseClient(interval_minutes=0)
-        client._stop_event.set()
-        client._flush_thread.join(timeout=1)
-        # _align_floor would divide-by-zero with interval=0, so mock it to a no-op.
-        # That leaves end == start, which triggers the inverted-range guard.
-        with patch.object(client, "_align_floor", side_effect=lambda dt: dt):
-            with pytest.raises(ValueError, match="empty or inverted"):
-                client._resolve_time_range(None, None)
+    def test_inverted_range_raises_value_error(self, ch):
+        start = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+        end = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        with pytest.raises(ValueError, match="empty or inverted"):
+            ch._resolve_time_range(start, end)
+
+
+class TestClickHouseConfig:
+    def test_default_port_is_8123(self, monkeypatch):
+        monkeypatch.delenv("CLICKHOUSE_PORT", raising=False)
+        assert ClickHouseConfig().port == 8123
+
+    def test_default_host_is_localhost(self, monkeypatch):
+        monkeypatch.delenv("CLICKHOUSE_HOST", raising=False)
+        assert ClickHouseConfig().host == "localhost"
+
+    def test_env_var_overrides_port(self, monkeypatch):
+        monkeypatch.setenv("CLICKHOUSE_PORT", "9000")
+        assert ClickHouseConfig().port == 9000
+
+    def test_default_connect_retries_is_5(self, monkeypatch):
+        monkeypatch.delenv("CLICKHOUSE_CONNECT_RETRIES", raising=False)
+        assert ClickHouseConfig().connect_retries == 5
+
+    def test_default_connect_retry_delay_is_3(self, monkeypatch):
+        monkeypatch.delenv("CLICKHOUSE_CONNECT_RETRY_DELAY", raising=False)
+        assert ClickHouseConfig().connect_retry_delay == 3
+
+    def test_env_var_overrides_connect_retries(self, monkeypatch):
+        monkeypatch.setenv("CLICKHOUSE_CONNECT_RETRIES", "10")
+        assert ClickHouseConfig().connect_retries == 10
+
+    def test_env_var_overrides_connect_retry_delay(self, monkeypatch):
+        monkeypatch.setenv("CLICKHOUSE_CONNECT_RETRY_DELAY", "7")
+        assert ClickHouseConfig().connect_retry_delay == 7
 
 
 # ---------------------------------------------------------------------------
@@ -500,15 +541,13 @@ class TestFlushAll:
 
 class TestFlushLoop:
     def test_loop_body_executes_before_stop(self, mock_ch_connect):
-        client = ClickHouseClient()
+        client = ClickHouseClient(config=_make_config())
         client._stop_event.set()
         client._flush_thread.join(timeout=1)
 
         calls = []
         with patch.object(client, "_flush_all", side_effect=lambda: calls.append(1)):
-            with patch.object(
-                client._stop_event, "wait", side_effect=[False, True]
-            ):
+            with patch.object(client._stop_event, "wait", side_effect=[False, True]):
                 client._flush_loop()
 
         # First call from loop body, second from final-flush-on-shutdown
@@ -693,3 +732,138 @@ class TestReadMetrics:
             end=datetime(2024, 1, 1, 12, 15),
         )
         assert result[0].name == MetricType.ZONE_GENERATION.value
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap retry logic
+# ---------------------------------------------------------------------------
+
+
+class TestBootstrapRetryLogic:
+    """Tests for the connection retry loop in ClickHouseClient.__init__."""
+
+    _SLEEP_PATH = "wattnet.storage.clients.plugins.clickhouse.time.sleep"
+
+    def _retry_config(self, retries=3, delay=2):
+        return StorageConfig(
+            timeseries_step_minutes=15,
+            plugin_configs={
+                "clickhouse": {
+                    "host": "localhost",
+                    "port": 8123,
+                    "user": "default",
+                    "password": "",
+                    "database": "test",
+                    "connect_retries": retries,
+                    "connect_retry_delay": delay,
+                }
+            },
+        )
+
+    def _make_client(self, config):
+        client = ClickHouseClient(config=config)
+        client._stop_event.set()
+        client._flush_thread.join(timeout=1)
+        return client
+
+    def test_success_on_first_attempt_no_sleep(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                self._make_client(self._retry_config())
+            mock_sleep.assert_not_called()
+
+    def test_retries_until_success_sleeps_between_attempts(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=[Exception("fail"), None],
+                ):
+                    self._make_client(self._retry_config(retries=3, delay=5))
+            mock_sleep.assert_called_once_with(5)
+
+    def test_all_retries_exhausted_raises_runtime_error(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH):
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=Exception("connection refused"),
+                ):
+                    with pytest.raises(RuntimeError, match="after 3 attempts"):
+                        self._make_client(self._retry_config(retries=3))
+
+    def test_sleep_called_n_minus_one_times_on_total_failure(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=Exception("fail"),
+                ):
+                    with pytest.raises(RuntimeError):
+                        self._make_client(self._retry_config(retries=4, delay=3))
+            # 4 attempts → sleep only between attempts, not after the last one
+            assert mock_sleep.call_count == 3
+
+    def test_sleep_uses_configured_delay_on_every_retry(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=[Exception("fail"), Exception("fail"), None],
+                ):
+                    self._make_client(self._retry_config(retries=5, delay=9))
+            assert all(call.args[0] == 9 for call in mock_sleep.call_args_list)
+
+    def test_runtime_error_message_includes_host_and_port(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH):
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=Exception("fail"),
+                ):
+                    with pytest.raises(RuntimeError) as exc_info:
+                        self._make_client(self._retry_config(retries=2))
+            assert "localhost" in str(exc_info.value)
+            assert "8123" in str(exc_info.value)
+
+    def test_exception_chain_is_preserved_in_runtime_error(self):
+        original = Exception("original connection error")
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH):
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=original,
+                ):
+                    with pytest.raises(RuntimeError) as exc_info:
+                        self._make_client(self._retry_config(retries=1))
+            assert exc_info.value.__cause__ is original
+
+    def test_plugin_config_connect_retries_respected(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=Exception("fail"),
+                ):
+                    with pytest.raises(RuntimeError, match="after 2 attempts"):
+                        self._make_client(self._retry_config(retries=2))
+            assert mock_sleep.call_count == 1
+
+    def test_single_retry_raises_immediately_without_sleep(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch(self._SLEEP_PATH) as mock_sleep:
+                with patch.object(
+                    ClickHouseClient,
+                    "_bootstrap_schema",
+                    side_effect=Exception("fail"),
+                ):
+                    with pytest.raises(RuntimeError):
+                        self._make_client(self._retry_config(retries=1))
+            mock_sleep.assert_not_called()

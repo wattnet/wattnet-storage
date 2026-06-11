@@ -1,16 +1,53 @@
 """ClickHouse storage client with buffered writes and Arrow-backed reads."""
 
+import logging
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from threading import Event, Lock, Thread, local
+from threading import Event, Lock, Thread, current_thread, local
 from typing import Any, List, cast
 
 import clickhouse_connect
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from wattnet.storage.clients.base import BaseStorageClient
+from wattnet.storage.config import StorageConfig
 from wattnet.storage.models import Metric
 from wattnet.storage.models.metric_type import MetricType
-from wattnet.storage.settings import settings
+
+LOG = logging.getLogger(__name__)
+
+
+class ClickHouseConfig(BaseSettings):
+    """Configuration for the ClickHouse plugin.
+
+    Reads the following environment variables (CLICKHOUSE_ prefix):
+    - CLICKHOUSE_HOST      (default: localhost)
+    - CLICKHOUSE_PORT      (default: 8123)
+    - CLICKHOUSE_USER      (default: default)
+    - CLICKHOUSE_PASSWORD  (default: "")
+    - CLICKHOUSE_DATABASE  (default: wattnet)
+    - CLICKHOUSE_CONNECT_RETRIES (default: 5)
+    - CLICKHOUSE_CONNECT_RETRY_DELAY (default: 3)
+
+    All values can be overridden programmatically via
+    StorageConfig.plugin_configs["clickhouse"].
+    """
+
+    host: str = "localhost"
+    port: int = 8123
+    user: str = "default"
+    password: str = ""
+    database: str = "wattnet"
+    connect_retries: int = Field(default=5, ge=1)
+    connect_retry_delay: int = Field(default=3, ge=0)
+
+    model_config = SettingsConfigDict(
+        env_prefix="CLICKHOUSE_",
+        extra="ignore",
+    )
+
 
 # -------------------------------------------------------------------
 # Table column definitions
@@ -216,6 +253,8 @@ _METRIC_QUERY_TEMPLATE = (
 class ClickHouseClient(BaseStorageClient):
     """ClickHouse storage client with a write buffer and thread-local connections."""
 
+    config_class = ClickHouseConfig
+
     # ------------------------------------------------------------------
     # Write buffer tuning
     # Flush when either condition is met: max rows OR max age (seconds).
@@ -223,25 +262,55 @@ class ClickHouseClient(BaseStorageClient):
     _FLUSH_INTERVAL_SECONDS = 2
     _FLUSH_MAX_ROWS = 5_000
 
-    def __init__(
-        self,
-        host=settings.clickhouse_host,
-        port=settings.clickhouse_port,
-        user=settings.clickhouse_user,
-        password=settings.clickhouse_password,
-        database=settings.database,
-        interval_minutes=settings.timeseries_step_minutes,
-    ):
-        """Initialize the ClickHouse client with connection parameters."""
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.database = database
-        self.interval_minutes = interval_minutes
+    def __init__(self, config: StorageConfig):
+        """Initialize the ClickHouse client with a StorageConfig."""
+        ch = self.config_class(**config.plugin_configs.get("clickhouse", {}))
+        self.host = ch.host
+        self.port = ch.port
+        self.user = ch.user
+        self.password = ch.password
+        self.database = ch.database
+        self.interval_minutes = config.timeseries_step_minutes
+        self._connect_retries = ch.connect_retries
+        self._connect_retry_delay = ch.connect_retry_delay
+
+        LOG.info(
+            "ClickHouse config — host=%s port=%d user=%s database=%s "
+            "password=%s interval_minutes=%d",
+            self.host,
+            self.port,
+            self.user,
+            self.database,
+            "[set]" if self.password else "[not set]",
+            self.interval_minutes,
+        )
 
         # 1. Bootstrap: create DB + tables using a root client (no database)
-        self._bootstrap_schema()
+        for attempt in range(1, self._connect_retries + 1):
+            try:
+                self._bootstrap_schema()
+                break
+            except Exception as e:
+                if attempt == self._connect_retries:
+                    LOG.error(
+                        "ClickHouse bootstrap attempt %d/%d failed: %s — giving up.",
+                        attempt,
+                        self._connect_retries,
+                        e,
+                    )
+                    raise RuntimeError(
+                        f"ClickHouse not available at {self.host}:{self.port} "
+                        f"after {self._connect_retries} attempts — cannot start."
+                    ) from e
+                LOG.warning(
+                    "ClickHouse bootstrap attempt %d/%d failed: %s "
+                    "— retrying in %ds",
+                    attempt,
+                    self._connect_retries,
+                    e,
+                    self._connect_retry_delay,
+                )
+                time.sleep(self._connect_retry_delay)
 
         # 2. Thread-local client storage — each thread gets its own connection.
         # clickhouse_connect does NOT support concurrent queries on the same session,
@@ -257,6 +326,11 @@ class ClickHouseClient(BaseStorageClient):
         self._stop_event = Event()
         self._flush_thread = Thread(target=self._flush_loop, daemon=True)
         self._flush_thread.start()
+        LOG.info(
+            "Flush thread started (interval=%ds, max_rows=%d)",
+            self._FLUSH_INTERVAL_SECONDS,
+            self._FLUSH_MAX_ROWS,
+        )
 
     # ------------------------------------------------------------------
     # CLIENT — one instance per thread
@@ -270,6 +344,10 @@ class ClickHouseClient(BaseStorageClient):
         concurrent queries share the same session.
         """
         if not hasattr(self._local, "client"):
+            LOG.debug(
+                "Creating new ClickHouse connection for thread '%s'",
+                current_thread().name,
+            )
             self._local.client = clickhouse_connect.get_client(
                 host=self.host,
                 port=self.port,
@@ -289,6 +367,7 @@ class ClickHouseClient(BaseStorageClient):
         Must run before self._client is created so the database exists when
         clickhouse_connect initialises the session.
         """
+        LOG.info("Bootstrapping schema for database '%s'", self.database)
         root = clickhouse_connect.get_client(
             host=self.host,
             port=self.port,
@@ -297,6 +376,7 @@ class ClickHouseClient(BaseStorageClient):
         )
         try:
             root.command(f"CREATE DATABASE IF NOT EXISTS {self.database}")
+            LOG.debug("Database '%s' ready", self.database)
 
             for table_name, cols in TABLE_SCHEMAS.items():
                 col_defs = ",\n    ".join(f"{name} {typ}" for name, typ in cols)
@@ -326,6 +406,9 @@ class ClickHouseClient(BaseStorageClient):
                     ENGINE = ReplacingMergeTree(updated_at)
                     ORDER BY ({", ".join(order_cols)})
                 """)
+                LOG.debug("Table '%s.%s' ready", self.database, table_name)
+
+            LOG.info("Schema bootstrap complete (%d tables)", len(TABLE_SCHEMAS))
         finally:
             root.close()
 
@@ -392,14 +475,14 @@ class ClickHouseClient(BaseStorageClient):
             # In that case use floor(end) directly as the exclusive bound.
             floored_end = self._align_floor(end)
             end = floored_end if floored_end == end else floored_end + interval
-            # If still collapsed (start == end), force at least one bucket.
-            if end <= start:
+            if end < start:
+                raise ValueError(
+                    f"Resolved time range is empty or inverted: "
+                    f"start={start}, end={end}"
+                )
+            # Degenerate equal range — force one bucket.
+            if end == start:
                 end = start + interval
-
-        if end <= start:
-            raise ValueError(
-                f"Resolved time range is empty or inverted: start={start}, end={end}"
-            )
 
         return start, end
 
@@ -466,13 +549,12 @@ class ClickHouseClient(BaseStorageClient):
 
         for table_name, rows in snapshot.items():
             if rows:
+                LOG.debug("Flushing %d rows to table '%s'", len(rows), table_name)
                 try:
                     self._flush_table(table_name, rows)
                 except Exception as e:
                     # Log and continue — a failed flush must not kill the thread
-                    import logging
-
-                    logging.getLogger(__name__).error(
+                    LOG.error(
                         "Flush failed for table %s (%d rows): %s",
                         table_name,
                         len(rows),
@@ -542,9 +624,7 @@ class ClickHouseClient(BaseStorageClient):
             try:
                 self._flush_table(table_name, rows)
             except Exception as e:
-                import logging
-
-                logging.getLogger(__name__).error(
+                LOG.error(
                     "Immediate flush failed for table %s (%d rows): %s",
                     table_name,
                     len(rows),
@@ -558,8 +638,10 @@ class ClickHouseClient(BaseStorageClient):
         Call this on graceful shutdown to avoid losing buffered rows.
         After calling flush() the client should not be used anymore.
         """
+        LOG.info("Graceful shutdown: flushing buffer and stopping flush thread")
         self._stop_event.set()
         self._flush_thread.join(timeout=10)
+        LOG.info("Flush thread stopped")
 
     # ------------------------------------------------------------------
     # READ — Arrow/DataFrame path for fast deserialization

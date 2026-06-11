@@ -5,6 +5,7 @@ import clickhouse_connect
 import pytest
 
 from wattnet.storage.clients.plugins.clickhouse import ClickHouseClient
+from wattnet.storage.config import StorageConfig
 
 CLICKHOUSE_TEST_HOST = os.getenv("CLICKHOUSE_TEST_HOST", "localhost")
 CLICKHOUSE_TEST_PORT = int(os.getenv("CLICKHOUSE_TEST_PORT", "18123"))
@@ -40,12 +41,18 @@ def ch_client():
         )
 
     client = ClickHouseClient(
-        host=CLICKHOUSE_TEST_HOST,
-        port=CLICKHOUSE_TEST_PORT,
-        user="default",
-        password="",
-        database=CLICKHOUSE_TEST_DB,
-        interval_minutes=15,
+        config=StorageConfig(
+            storage_clients=["clickhouse"],
+            plugin_configs={
+                "clickhouse": {
+                    "host": CLICKHOUSE_TEST_HOST,
+                    "port": CLICKHOUSE_TEST_PORT,
+                    "user": "default",
+                    "password": "",
+                    "database": CLICKHOUSE_TEST_DB,
+                }
+            },
+        )
     )
     yield client
     client.flush()

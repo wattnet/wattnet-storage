@@ -77,7 +77,7 @@ deptry = ">=0.23"
 mypy = "^2.0"
 
 [tool.poetry.group.release.dependencies]
-twine = ">=4.0.2,<7.0.0"
+twine = ">=4.0.2,<8.0.0"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]

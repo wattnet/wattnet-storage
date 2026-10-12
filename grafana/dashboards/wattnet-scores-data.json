@@ -197,7 +197,7 @@
 					"refId": "A"
 				}
 			],
-			"title": "Local GreenScore ($scope scope)",
+			"title": "Local Environmental Score ($scope scope)",
 			"transparent": true,
 			"type": "timeseries"
 		},
@@ -306,7 +306,7 @@
 					"refId": "A"
 				}
 			],
-			"title": "Global GreenScore score ($scope scope)",
+			"title": "Global Environmental Score score ($scope scope)",
 			"transparent": true,
 			"type": "timeseries"
 		},
@@ -492,7 +492,7 @@
 					"refId": "global"
 				}
 			],
-			"title": "Comparison GreenScore score ($scope scope)",
+			"title": "Comparison Environmental Score score ($scope scope)",
 			"transparent": true,
 			"type": "barchart"
 		}
@@ -500,7 +500,7 @@
 	"preload": false,
 	"refresh": "",
 	"schemaVersion": 42,
-	"tags": ["wattnet", "greenscore", "local", "global"],
+	"tags": ["wattnet", "environmental-score", "local", "global"],
 	"templating": {
 		"list": [
 			{
@@ -600,7 +600,7 @@
 	},
 	"timepicker": {},
 	"timezone": "utc",
-	"title": "wattnet greenscore data",
+	"title": "wattnet environmental score data",
 	"uid": "ceh76nxs701s0r",
 	"version": 3
 }

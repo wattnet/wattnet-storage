@@ -65,7 +65,7 @@ pydocstyle = "^6.1"
 
 [tool.poetry.group.format.dependencies]
 black = ">=22.3,<27.0"
-isort = "^8.0"
+isort = ">=8,<10"
 
 [tool.poetry.group.security.dependencies]
 bandit = "^1.9.0"
@@ -77,7 +77,7 @@ deptry = ">=0.23"
 mypy = "^2.0"
 
 [tool.poetry.group.release.dependencies]
-twine = ">=4.0.2,<7.0.0"
+twine = ">=4.0.2,<8.0.0"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]

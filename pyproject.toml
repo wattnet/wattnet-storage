@@ -9,7 +9,7 @@ homepage = "https://wattnet.eu"
 repository = "https://github.com/wattnet/wattnet-storage"
 keywords = [
     "energy", "electricity", "carbon", "carbon-footprint",
-    "water", "water-footprint", "water-impact", "greenscore",
+    "water", "water-footprint", "water-impact", "environmental-score",
     "time-series", "metrics", "storage", "clickhouse",
     "sustainability", "wattnet",
 ]

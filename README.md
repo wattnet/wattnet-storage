@@ -47,9 +47,9 @@ Any Wattnet module that needs to persist data translates its domain objects into
 
 ## Architecture
 
-![Storage component diagram](https://github.com/wattnet/wattnet-architecture/blob/main/diagrams/png/structurizr-1-wattnet_storage.png?raw=true)
+![Storage component diagram](https://github.com/wattnet/wattnet-software-architecture/blob/main/diagrams/png/structurizr-1-wattnet_storage.png?raw=true)
 
-For the full system architecture see the [wattnet-architecture](https://github.com/wattnet/wattnet-architecture) repository.
+For the full software architecture see the [wattnet-software-architecture](https://github.com/wattnet/wattnet-software-architecture) repository.
 
 The client layer is plugin-based (via [stevedore](https://docs.openstack.org/stevedore/)). Additional storage backends can be added by implementing `BaseStorageClient` and registering a `wattnet.storage.clients` entry point.
 

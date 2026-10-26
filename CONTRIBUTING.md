@@ -83,6 +83,7 @@ Key rules:
 - Line length: 88 characters (Black default).
 - Import order: standard library → third-party → first-party (`isort` with Black profile).
 - Docstrings: required on all public modules, classes, and functions (`pydocstyle`).
+- Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`).
 
 ## Submitting a Pull Request
 

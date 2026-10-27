@@ -21,7 +21,9 @@ class TestBaseStorageClientAbstract:
 
     def test_missing_write_metrics_raises(self):
         class Incomplete(BaseStorageClient):
-            def read_metrics(self, metric_name, start=None, end=None, labels=None, params=None):
+            def read_metrics(
+                self, metric_name, start=None, end=None, labels=None, params=None
+            ):
                 return []
 
         with pytest.raises(TypeError):
@@ -39,7 +41,9 @@ class TestConcreteClient:
     @pytest.fixture
     def client(self):
         class ConcreteClient(BaseStorageClient):
-            def read_metrics(self, metric_name, start=None, end=None, labels=None, params=None):
+            def read_metrics(
+                self, metric_name, start=None, end=None, labels=None, params=None
+            ):
                 return []
 
             def write_metrics(self, metrics):

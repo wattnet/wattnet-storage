@@ -34,10 +34,23 @@ class TestMetricType:
 
     def test_all_expected_members_present(self):
         expected = {
-            "zone_generation", "zone_import", "zone_export", "zone_load",
-            "zone_mix_generation", "factor", "local_footprint", "global_footprint",
-            "local_impact", "global_impact", "local_score", "global_score",
-            "flow_share", "mix_share", "footprint_share", "impact_share", "unknown",
+            "zone_generation",
+            "zone_import",
+            "zone_export",
+            "zone_load",
+            "zone_mix_generation",
+            "factor",
+            "local_footprint",
+            "global_footprint",
+            "local_impact",
+            "global_impact",
+            "local_score",
+            "global_score",
+            "flow_share",
+            "mix_share",
+            "footprint_share",
+            "impact_share",
+            "unknown",
         }
         assert {mt.value for mt in MetricType} == expected
 
@@ -122,7 +135,12 @@ class TestMetric:
         assert sample_metric.metadata["zone"] == "FR"
 
     def test_to_dict_keys(self, sample_metric):
-        assert set(sample_metric.to_dict().keys()) == {"name", "value", "timestamp", "metadata"}
+        assert set(sample_metric.to_dict().keys()) == {
+            "name",
+            "value",
+            "timestamp",
+            "metadata",
+        }
 
     def test_to_dict_name(self, sample_metric):
         assert sample_metric.to_dict()["name"] == "zone_generation"

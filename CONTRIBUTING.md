@@ -21,7 +21,7 @@ Thank you for your interest in contributing. This document covers how to set up 
 2. Install all dependency groups:
 
     ```bash
-    poetry install --with dev,test,lint,format,types,security
+    poetry install --with dev,test,lint,types,security
     ```
 
 3. Install the pre-commit hooks:
@@ -62,12 +62,9 @@ tox -e format
 We enforce a consistent style automatically. Before opening a PR, run:
 
 ```bash
-# Format code
-black .
-isort .
-
-# Lint
-flake8 .
+# Format and lint
+ruff format .
+ruff check wattnet
 
 # Type-check
 mypy .
@@ -80,9 +77,10 @@ All of these also run via pre-commit on every commit and are verified in CI.
 
 Key rules:
 
-- Line length: 88 characters (Black default).
-- Import order: standard library → third-party → first-party (`isort` with Black profile).
-- Docstrings: required on all public modules, classes, and functions (`pydocstyle`).
+- Line length: 88 characters (Ruff default).
+- Import order: standard library → third-party → first-party, enforced by Ruff's isort rules.
+- Docstrings: required on all public modules, classes, and functions, enforced by Ruff's pydocstyle rules with the pep257 convention.
+- Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`).
 
 ## Submitting a Pull Request
 
@@ -110,8 +108,8 @@ Key rules:
     from wattnet.storage.config import StorageConfig
     from wattnet.storage.models import Metric
 
-    class MyBackendClient(BaseStorageClient):
 
+    class MyBackendClient(BaseStorageClient):
         def __init__(self, config: StorageConfig):
             plugin_cfg = config.plugin_configs.get("mybackend", {})
             # initialise your client using plugin_cfg or environment variables
@@ -123,11 +121,9 @@ Key rules:
             end: datetime | None = None,
             labels: dict | None = None,
             params: dict | None = None,
-        ) -> list[Metric]:
-            ...
+        ) -> list[Metric]: ...
 
-        def write_metrics(self, metrics: list[Metric]) -> None:
-            ...
+        def write_metrics(self, metrics: list[Metric]) -> None: ...
     ```
 
 2. Register the plugin as a `wattnet.storage.clients` entry point in your `pyproject.toml`:

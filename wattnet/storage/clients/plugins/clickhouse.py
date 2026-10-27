@@ -303,8 +303,7 @@ class ClickHouseClient(BaseStorageClient):
                         f"after {self._connect_retries} attempts — cannot start."
                     ) from e
                 LOG.warning(
-                    "ClickHouse bootstrap attempt %d/%d failed: %s "
-                    "— retrying in %ds",
+                    "ClickHouse bootstrap attempt %d/%d failed: %s — retrying in %ds",
                     attempt,
                     self._connect_retries,
                     e,
@@ -677,7 +676,7 @@ class ClickHouseClient(BaseStorageClient):
             ts = row[0]
             val = row[1]
 
-            metadata = dict(zip(col_names[2:], row[2:]))
+            metadata = dict(zip(col_names[2:], row[2:], strict=True))
             normalized = {
                 REVERSE_COLUMN_NAME_MAP.get(k, k): v for k, v in metadata.items()
             }

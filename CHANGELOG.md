@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.1.1](https://github.com/wattnet/wattnet-storage/compare/v1.1.0...v1.1.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** bump urllib3 and virtualenv to resolve Dependabot alerts ([8544d9d](https://github.com/wattnet/wattnet-storage/commit/8544d9d5edf44d09625908f0964488436c4c5427))
+* **deps:** bump urllib3 to 2.8.0 and virtualenv to 21.14.7 ([5e4814a](https://github.com/wattnet/wattnet-storage/commit/5e4814a1b6718d647f6c167f19cca697cd01a3c4))
+
+
+### Documentation
+
+* align community files with the repository reference ([18dbfdf](https://github.com/wattnet/wattnet-storage/commit/18dbfdf416021f1b25026ccbc4806a3fb38590e1))
+* align README funding section with other wattnet repos ([c2c708b](https://github.com/wattnet/wattnet-storage/commit/c2c708b154033d2e6ff97a0dcdf649b1d6b5f963))
+* align README funding section with other wattnet repos ([e3da375](https://github.com/wattnet/wattnet-storage/commit/e3da375f078f41a84102ba7b8de80d4964489817))
+* document Conventional Commits and add the badge ([1c4cb9a](https://github.com/wattnet/wattnet-storage/commit/1c4cb9a6d3e0faa39d1940952d1bc077c8a23370))
+* point to the renamed wattnet-software-architecture repository ([2c9820d](https://github.com/wattnet/wattnet-storage/commit/2c9820d06d67225ada7bfbf3ef9e1ff23a785383))
+* point to the renamed wattnet-software-architecture repository ([2bb9353](https://github.com/wattnet/wattnet-storage/commit/2bb93539492bccd99e88ea45058a195db5080943))
+* refresh the README badge table ([591f08f](https://github.com/wattnet/wattnet-storage/commit/591f08f839e33a267c742f2665c18c23e0970ce4))
+
+
+### Build System
+
+* **deps:** bump clickhouse-connect from 1.1.1 to 1.10.0 ([026f71c](https://github.com/wattnet/wattnet-storage/commit/026f71c0c95db577759fb36c3b56ac55911a7ef2))
+* **deps:** bump clickhouse-connect from 1.1.1 to 1.10.0 ([4ba6cbf](https://github.com/wattnet/wattnet-storage/commit/4ba6cbfa460eda6851355096061878e71f0b3214))
+* **deps:** bump clickhouse-connect from 1.10.0 to 1.11.0 ([25ce98a](https://github.com/wattnet/wattnet-storage/commit/25ce98afac20077388b0c2f19d47233df56e88ca))
+* **deps:** bump clickhouse-connect from 1.10.0 to 1.11.0 ([5bf69e3](https://github.com/wattnet/wattnet-storage/commit/5bf69e34f57c9110cc92e7dc8300912650a13a05))
+* **deps:** bump cryptography from 48.0.0 to 50.0.0 ([c58cabc](https://github.com/wattnet/wattnet-storage/commit/c58cabc1320f863fa6575063a6c985d1c0210616))
+* **deps:** bump cryptography from 48.0.0 to 50.0.0 ([5a92ce2](https://github.com/wattnet/wattnet-storage/commit/5a92ce2176d43da365b1d9b68606b56b9a335519))
+* **deps:** bump pydantic from 2.13.4 to 2.13.5 ([550fa4d](https://github.com/wattnet/wattnet-storage/commit/550fa4d0029a06b31ededb29d75b45ce524c8bb5))
+* **deps:** bump pydantic from 2.13.4 to 2.13.5 ([3da02f5](https://github.com/wattnet/wattnet-storage/commit/3da02f5dcfa596c8f204a0306b3559a6d00f49f7))
+* **deps:** bump pydantic from 2.13.5 to 2.14.1 ([81c11a8](https://github.com/wattnet/wattnet-storage/commit/81c11a8fd06c92f6fc158442bbb64829cf8105ba))
+* **deps:** bump pydantic from 2.13.5 to 2.14.1 ([b511013](https://github.com/wattnet/wattnet-storage/commit/b511013b286b221ff3d6f56e587b0fe27aabbbf1))
+* **deps:** bump pydantic-settings from 2.14.1 to 2.15.0 ([22ea335](https://github.com/wattnet/wattnet-storage/commit/22ea335d318c230f173dcc33b86070adffd111dd))
+* **deps:** bump pydantic-settings from 2.14.1 to 2.15.0 ([b475fed](https://github.com/wattnet/wattnet-storage/commit/b475fed95d188341e3b997ab29b808389c53f040))
+* **deps:** bump the dev-dependencies group across 1 directory with 6 updates ([f5dd1f6](https://github.com/wattnet/wattnet-storage/commit/f5dd1f66c4b8ebda91029b6d7410dcb05b02466b))
+* **deps:** bump the dev-dependencies group across 1 directory with 6 updates ([78097df](https://github.com/wattnet/wattnet-storage/commit/78097df9cfbc0fbce8cc64ad4c02f6fefba40942))
+* **deps:** bump the dev-dependencies group across 1 directory with 6 updates ([4a1dfaa](https://github.com/wattnet/wattnet-storage/commit/4a1dfaa8df968d47eed6cd546f0da3fbd2947c31))
+* **deps:** bump the dev-dependencies group across 1 directory with 6 updates ([9814d68](https://github.com/wattnet/wattnet-storage/commit/9814d68b67f8896ed211b4e868eb9bdf252afb08))
+* migrate linting and formatting to Ruff ([13339d0](https://github.com/wattnet/wattnet-storage/commit/13339d06be117502152b163b3b4995165d6968d1))
+* migrate to Ruff and refresh README badges ([3c9d1d3](https://github.com/wattnet/wattnet-storage/commit/3c9d1d3cf513ca4822e667e8aa5b442dd73b933a))
+
 ## [1.1.0](https://github.com/wattnet/wattnet-storage/compare/v1.0.0...v1.1.0) (2026-06-11)
 
 

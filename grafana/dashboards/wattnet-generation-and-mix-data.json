@@ -246,7 +246,7 @@
 					},
 					"pluginVersion": "4.15.0",
 					"queryType": "timeseries",
-					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone) AS metric,\n    value AS \" \"\nFROM\n    wattnet.zone_mix_generation FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND production_type IN (${production_type:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY\n    time ASC;",
+					"rawSql": "SELECT\n    timestamp AS time,\n    concat(zone) AS metric,\n    value AS \" \"\nFROM\n    wattnet.zone_mix FINAL\nWHERE\n    zone IN (${zone:singlequote})\n    AND production_type IN (${production_type:singlequote})\n    AND data_state IN (${data_state:singlequote})\n    AND valid IN (${valid:singlequote})\n    AND zone_status IN (${zone_status:singlequote})\n    AND $__timeFilter(timestamp)\nORDER BY\n    time ASC;",
 					"refId": "A"
 				}
 			],

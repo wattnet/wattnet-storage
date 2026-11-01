@@ -38,7 +38,7 @@ class TestMetricType:
             "zone_import",
             "zone_export",
             "zone_load",
-            "zone_mix_generation",
+            "zone_mix",
             "factor",
             "local_footprint",
             "global_footprint",

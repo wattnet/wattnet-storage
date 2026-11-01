@@ -101,7 +101,7 @@ TABLE_SCHEMAS = {
         ("zone", "LowCardinality(String)"),
         ("zone_status", "LowCardinality(String)"),
     ],
-    "zone_mix_generation": [
+    "zone_mix": [
         ("timestamp", "DateTime"),
         ("value", "Float32"),
         ("data_state", "LowCardinality(String)"),

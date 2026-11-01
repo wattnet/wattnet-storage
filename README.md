@@ -197,7 +197,7 @@ results = repo.query_metrics(
 | `ZONE_IMPORT`         | `zone_import`         | Electricity imports                     |
 | `ZONE_EXPORT`         | `zone_export`         | Electricity exports                     |
 | `ZONE_LOAD`           | `zone_load`           | Electricity consumption / load          |
-| `ZONE_MIX_GENERATION` | `zone_mix_generation` | Generation mix per source               |
+| `ZONE_MIX`            | `zone_mix`            | Mix consumed in the zone, per source    |
 | `FACTOR`              | `factor`              | Emission factor                         |
 | `LOCAL_FOOTPRINT`     | `local_footprint`     | Location-based carbon footprint         |
 | `GLOBAL_FOOTPRINT`    | `global_footprint`    | Market-based carbon footprint           |

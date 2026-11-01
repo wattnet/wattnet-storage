@@ -10,7 +10,7 @@ class MetricType(str, Enum):
     ZONE_IMPORT = "zone_import"
     ZONE_EXPORT = "zone_export"
     ZONE_LOAD = "zone_load"
-    ZONE_MIX_GENERATION = "zone_mix_generation"
+    ZONE_MIX = "zone_mix"
     FACTOR = "factor"
     LOCAL_FOOTPRINT = "local_footprint"
     GLOBAL_FOOTPRINT = "global_footprint"

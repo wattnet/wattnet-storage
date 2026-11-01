@@ -1,0 +1,34 @@
+# Packages the Grafana files for Kubernetes, for the Grafana of kube-prometheus-stack:
+#   grafana-dashboards-wattnet   every dashboard in one ConfigMap. The label grafana_dashboard is what the sidecar looks for, and the annotation
+#                                grafana_folder names the folder where it puts them.
+#   grafana-login-background     the background of the login page (the same file the local stack mounts). It is not a dashboard, so it has
+#                                neither the label nor the annotation.
+# The namespace is left to whoever applies it (the Flux Kustomization of wattnet-deploy sets it). The local stack (docker-compose.yml) does not use
+# this file: it mounts the files directly.
+#
+# A new dashboard has to be added to the list below as well.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: grafana-dashboards-wattnet
+    files:
+      - dashboards/wattnet-factors.json
+      - dashboards/wattnet-footprints-data.json
+      - dashboards/wattnet-generation-and-mix-data.json
+      - dashboards/wattnet-impacts-data.json
+      - dashboards/wattnet-raw-data-stack.json
+      - dashboards/wattnet-raw-data.json
+      - dashboards/wattnet-scores-data.json
+      - dashboards/wattnet-zone-share.json
+    options:
+      # Without the hash in the name, so the ConfigMap is updated in place and Grafana reloads it.
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: Wattnet
+  - name: grafana-login-background
+    files:
+      - wattnet.eu.svg
+    options:
+      disableNameSuffixHash: true

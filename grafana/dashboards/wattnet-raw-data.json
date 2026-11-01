@@ -155,7 +155,7 @@
 					},
 					"datasource": {
 						"type": "grafana-clickhouse-datasource",
-						"uid": "cfcb14ibbjz7kf"
+						"uid": "PDEE91DDB90597936"
 					},
 					"editorType": "sql",
 					"format": 0,
@@ -403,7 +403,7 @@
 				{
 					"datasource": {
 						"type": "grafana-clickhouse-datasource",
-						"uid": "cfcb14ibbjz7kf"
+						"uid": "PDEE91DDB90597936"
 					},
 					"editorType": "sql",
 					"format": 0,
@@ -516,7 +516,7 @@
 				{
 					"datasource": {
 						"type": "grafana-clickhouse-datasource",
-						"uid": "cfcb14ibbjz7kf"
+						"uid": "PDEE91DDB90597936"
 					},
 					"editorType": "sql",
 					"format": 0,

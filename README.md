@@ -71,6 +71,8 @@ docker compose up -d
 
 Grafana's default credentials are `admin` / `admin`. The ClickHouse datasource and dashboards are provisioned automatically.
 
+The dashboards are in `grafana/dashboards/`. `grafana/kustomization.yaml` packages them as one `ConfigMap` with the label that the Grafana of `kube-prometheus-stack` loads (and the login background as another one), so a Kubernetes deployment can use them straight from this repository without a copy (`kubectl kustomize grafana` shows the result). When you add a dashboard, add it to the list in that file too. The datasource uid is fixed (`PDEE91DDB90597936`) because the dashboards refer to it.
+
 ## Python Client
 
 ### Installation

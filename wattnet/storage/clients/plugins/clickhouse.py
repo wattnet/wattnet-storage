@@ -261,6 +261,10 @@ class ClickHouseClient(BaseStorageClient):
     # ------------------------------------------------------------------
     _FLUSH_INTERVAL_SECONDS = 2
     _FLUSH_MAX_ROWS = 5_000
+    # Rows of a failed flush go back to the buffer and are retried on the next
+    # flush. Past this many rows per table the oldest are dropped, so an outage
+    # that lasts too long cannot exhaust the memory of the process.
+    _MAX_BUFFERED_ROWS = 200_000
 
     def __init__(self, config: StorageConfig):
         """Initialize the ClickHouse client with a StorageConfig."""
@@ -319,6 +323,9 @@ class ClickHouseClient(BaseStorageClient):
         # 3. Write buffer
         self._buffer: dict[str, list] = defaultdict(list)
         self._buffer_lock = Lock()
+        # True while ClickHouse is failing: writers stop flushing by themselves
+        # (each try would block them) and leave the retries to the flush thread.
+        self._flush_failing = False
 
         # 4. Flush thread — a permanent daemon thread is more stable than
         # chained Timers for long-running services (no drift, no overlaps).
@@ -549,17 +556,51 @@ class ClickHouseClient(BaseStorageClient):
         for table_name, rows in snapshot.items():
             if rows:
                 LOG.debug("Flushing %d rows to table '%s'", len(rows), table_name)
-                try:
-                    self._flush_table(table_name, rows)
-                except Exception as e:
-                    # Log and continue — a failed flush must not kill the thread
-                    LOG.error(
-                        "Flush failed for table %s (%d rows): %s",
-                        table_name,
-                        len(rows),
-                        e,
-                        exc_info=True,
-                    )
+                self._flush_or_requeue(table_name, rows)
+
+    def _flush_or_requeue(self, table_name: str, rows: list) -> None:
+        """Insert a batch; if it fails, put it back in the buffer for the next flush.
+
+        Re-sending a batch is safe: updated_at is set when the row is built, so a
+        row that did reach ClickHouse is collapsed with its copy by ReplacingMergeTree.
+        """
+        try:
+            self._flush_table(table_name, rows)
+            self._flush_failing = False
+        except Exception as e:
+            # Log and continue — a failed flush must not kill the thread
+            self._flush_failing = True
+            self._drop_client()
+            self._requeue(table_name, rows)
+            LOG.error(
+                "Flush failed for table %s (%d rows, kept for retry): %s",
+                table_name,
+                len(rows),
+                e,
+            )
+
+    def _requeue(self, table_name: str, rows: list) -> None:
+        """Put rows back at the front of the buffer of a table, within its limit."""
+        with self._buffer_lock:
+            queued = rows + self._buffer[table_name]
+            excess = len(queued) - self._MAX_BUFFERED_ROWS
+            if excess > 0:
+                LOG.error(
+                    "Buffer of table %s is full: dropping its %d oldest rows",
+                    table_name,
+                    excess,
+                )
+                queued = queued[excess:]
+            self._buffer[table_name] = queued
+
+    def _drop_client(self) -> None:
+        """Forget the connection of this thread, so the next call opens a new one."""
+        client = self._local.__dict__.pop("client", None)
+        if client is not None:
+            try:
+                client.close()
+            except Exception as e:
+                LOG.debug("Closing the broken connection failed: %s", e)
 
     def _flush_table(self, table_name: str, rows: list) -> None:
         """Insert a pre-built batch of rows into ClickHouse."""
@@ -614,22 +655,16 @@ class ClickHouseClient(BaseStorageClient):
                 rows = [self._build_row(table_name, m) for m in items]
                 self._buffer[table_name].extend(rows)
 
-                if len(self._buffer[table_name]) >= self._FLUSH_MAX_ROWS:
+                if (
+                    len(self._buffer[table_name]) >= self._FLUSH_MAX_ROWS
+                    and not self._flush_failing
+                ):
                     # Collect oversized tables; flush OUTSIDE the lock below
                     flush_batches.append((table_name, self._buffer.pop(table_name)))
 
         # I/O happens outside the lock — other writers are never blocked by network
         for table_name, rows in flush_batches:
-            try:
-                self._flush_table(table_name, rows)
-            except Exception as e:
-                LOG.error(
-                    "Immediate flush failed for table %s (%d rows): %s",
-                    table_name,
-                    len(rows),
-                    e,
-                    exc_info=True,
-                )
+            self._flush_or_requeue(table_name, rows)
 
     def flush(self) -> None:
         """Force an immediate flush and stop the background flush thread.
@@ -640,6 +675,9 @@ class ClickHouseClient(BaseStorageClient):
         LOG.info("Graceful shutdown: flushing buffer and stopping flush thread")
         self._stop_event.set()
         self._flush_thread.join(timeout=10)
+        lost = sum(len(rows) for rows in self._buffer.values())
+        if lost:
+            LOG.error("ClickHouse unreachable at shutdown: %d buffered rows lost", lost)
         LOG.info("Flush thread stopped")
 
     # ------------------------------------------------------------------

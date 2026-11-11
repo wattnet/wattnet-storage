@@ -189,6 +189,14 @@ results = repo.query_metrics(
 )
 ```
 
+#### How writes are sent
+
+`write_metrics` does not wait for ClickHouse: it adds the rows to an in-memory buffer, and a background thread sends them in batches every 2 seconds, or at once when a table collects 5,000 rows.
+
+If ClickHouse cannot be reached (a restart, a network cut, a switch to another replica), no rows are lost: the failed batch goes back to the buffer and is sent again on the next attempt, ahead of the newer rows, over a new connection. Sending a batch twice is harmless, because ClickHouse keeps one row per data point. While ClickHouse keeps failing, callers of `write_metrics` are never blocked by it. The buffer keeps at most 200,000 rows per table; in an outage long enough to fill it, the oldest rows are dropped and an error is logged.
+
+Call `flush()` on the storage client when the application stops, so the rows still in the buffer are sent. If ClickHouse is down at that moment, the number of rows lost is logged.
+
 #### Supported metric types
 
 | `MetricType`          | Value                 | Description                             |

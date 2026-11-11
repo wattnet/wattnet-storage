@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -140,7 +140,16 @@ class TestMetric:
             "value",
             "timestamp",
             "metadata",
+            "updated_at",
         }
+
+    def test_to_dict_updated_at_is_none_until_read(self, sample_metric):
+        assert sample_metric.to_dict()["updated_at"] is None
+
+    def test_to_dict_updated_at_is_iso_string(self):
+        stored = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+        m = Metric(MetricType.ZONE_LOAD, 1.0, updated_at=stored)
+        assert m.to_dict()["updated_at"] == "2026-01-01T12:00:00+00:00"
 
     def test_to_dict_name(self, sample_metric):
         assert sample_metric.to_dict()["name"] == "zone_generation"

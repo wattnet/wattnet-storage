@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from wattnet.storage.clients.manager import StorageClientsManager
 from wattnet.storage.config import StorageConfig
-from wattnet.storage.models.metric import Metric
+from wattnet.storage.models import Metric, MetricSpec
 from wattnet.storage.processors import filter_best_metrics
 from wattnet.storage.utils import log
 
@@ -31,7 +31,7 @@ class MetricsRepository:
     ) -> List[Metric]:
         """Query metrics from storage.
 
-        :param metric_name: Name of the metric (MetricType.value)
+        :param metric_name: Name of the metric (a MetricType value or a declared metric)
         :param start: Start datetime
         :param end: End datetime
         :param labels: Optional labels to filter metrics
@@ -56,3 +56,18 @@ class MetricsRepository:
             return
 
         self.storage_manager.write_metrics(metrics)
+
+    def register_metrics(self, *specs: MetricSpec) -> None:
+        """Declare metrics that are not built-in, so they can be written and read.
+
+        Call it once at start-up, before writing them. Their tables are created, and
+        labels added to a spec later are added to the existing table.
+
+        :param specs: MetricSpec objects
+        """
+        for spec in specs:
+            self.storage_manager.register_metric(spec)
+
+    def ping(self) -> bool:
+        """Return True if every storage backend answers, for a health check."""
+        return self.storage_manager.ping()

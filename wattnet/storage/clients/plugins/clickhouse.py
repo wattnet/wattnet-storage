@@ -8,13 +8,14 @@ from threading import Event, Lock, Thread, current_thread, local
 from typing import Any, List, cast
 
 import clickhouse_connect
+from clickhouse_connect.driver.exceptions import OperationalError
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from wattnet.storage.clients.base import BaseStorageClient
 from wattnet.storage.config import StorageConfig
-from wattnet.storage.models import Metric
-from wattnet.storage.models.metric_type import MetricType
+from wattnet.storage.models import Metric, MetricSpec
+from wattnet.storage.models.metric_spec import check_identifier
 
 LOG = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class ClickHouseConfig(BaseSettings):
     - CLICKHOUSE_DATABASE  (default: wattnet)
     - CLICKHOUSE_CONNECT_RETRIES (default: 5)
     - CLICKHOUSE_CONNECT_RETRY_DELAY (default: 3)
+    - CLICKHOUSE_REPLICATED (default: false)
 
     All values can be overridden programmatically via
     StorageConfig.plugin_configs["clickhouse"].
@@ -42,6 +44,9 @@ class ClickHouseConfig(BaseSettings):
     database: str = "wattnet"
     connect_retries: int = Field(default=5, ge=1)
     connect_retry_delay: int = Field(default=3, ge=0)
+    # True on a ClickHouse cluster with replicas and Keeper: the database is created
+    # with the Replicated engine and the tables with ReplicatedReplacingMergeTree.
+    replicated: bool = False
 
     model_config = SettingsConfigDict(
         env_prefix="CLICKHOUSE_",
@@ -277,16 +282,24 @@ class ClickHouseClient(BaseStorageClient):
         self.interval_minutes = config.timeseries_step_minutes
         self._connect_retries = ch.connect_retries
         self._connect_retry_delay = ch.connect_retry_delay
+        self.replicated = ch.replicated
+        # Columns of every table this client writes or reads: the built-in ones, the
+        # ones declared with register_metric and the ones found in ClickHouse on read.
+        self._schemas: dict[str, list[tuple[str, str]]] = {
+            name: list(cols) for name, cols in TABLE_SCHEMAS.items()
+        }
+        self._schema_lock = Lock()
 
         LOG.info(
             "ClickHouse config — host=%s port=%d user=%s database=%s "
-            "password=%s interval_minutes=%d",
+            "password=%s interval_minutes=%d replicated=%s",
             self.host,
             self.port,
             self.user,
             self.database,
             "[set]" if self.password else "[not set]",
             self.interval_minutes,
+            self.replicated,
         )
 
         # 1. Bootstrap: create DB + tables using a root client (no database)
@@ -381,12 +394,17 @@ class ClickHouseClient(BaseStorageClient):
             password=self.password,
         )
         try:
-            root.command(f"CREATE DATABASE IF NOT EXISTS {self.database}")
+            database_sql = f"CREATE DATABASE IF NOT EXISTS {self.database}"
+            if self.replicated:
+                # The macros shard and replica come from the config of each server.
+                database_sql += (
+                    f" ENGINE = Replicated('/clickhouse/databases/{self.database}',"
+                    " '{shard}', '{replica}')"
+                )
+            root.command(database_sql)
             LOG.debug("Database '%s' ready", self.database)
 
             for table_name, cols in TABLE_SCHEMAS.items():
-                col_defs = ",\n    ".join(f"{name} {typ}" for name, typ in cols)
-
                 order_cols = ["timestamp"]
                 preferred = [
                     "zone",
@@ -405,18 +423,98 @@ class ClickHouseClient(BaseStorageClient):
                     if p in {c[0] for c in cols}:
                         order_cols.append(p)
 
-                root.command(f"""
-                    CREATE TABLE IF NOT EXISTS {self.database}.{table_name} (
-                        {col_defs}
-                    )
-                    ENGINE = ReplacingMergeTree(updated_at)
-                    ORDER BY ({", ".join(order_cols)})
-                """)
-                LOG.debug("Table '%s.%s' ready", self.database, table_name)
+                self._create_table(root, table_name, cols, order_cols)
 
             LOG.info("Schema bootstrap complete (%d tables)", len(TABLE_SCHEMAS))
         finally:
             root.close()
+
+    def _create_table(
+        self,
+        client,
+        table_name: str,
+        cols: list[tuple[str, str]],
+        order_cols: list[str],
+    ) -> None:
+        """Create a table if it does not exist, and add the columns it is missing."""
+        engine = (
+            "ReplicatedReplacingMergeTree(updated_at)"
+            if self.replicated
+            else "ReplacingMergeTree(updated_at)"
+        )
+        col_defs = ",\n    ".join(f"{name} {typ}" for name, typ in cols)
+        client.command(f"""
+            CREATE TABLE IF NOT EXISTS {self.database}.{table_name} (
+                {col_defs}
+            )
+            ENGINE = {engine}
+            ORDER BY ({", ".join(order_cols)})
+        """)
+        existing = {name for name, _ in self._find_columns(client, table_name)}
+        for name, typ in cols:
+            if existing and name not in existing:
+                LOG.info("Adding column %s to table '%s'", name, table_name)
+                client.command(
+                    f"ALTER TABLE {self.database}.{table_name}"
+                    f" ADD COLUMN IF NOT EXISTS {name} {typ}"
+                )
+        LOG.debug("Table '%s.%s' ready", self.database, table_name)
+
+    def _find_columns(self, client, table_name: str) -> list[tuple[str, str]]:
+        """Return the columns of a table in order; empty if the table does not exist."""
+        result = client.query(
+            "SELECT name, type FROM system.columns"
+            " WHERE database = {db:String} AND table = {table:String}"
+            " ORDER BY position",
+            parameters={"db": self.database, "table": table_name},
+        )
+        return [(name, typ) for name, typ in result.result_rows]
+
+    # ------------------------------------------------------------------
+    # DECLARED METRICS
+    # ------------------------------------------------------------------
+
+    def register_metric(self, spec: MetricSpec) -> None:
+        """Create the table of a declared metric, or add its new labels.
+
+        The order key of an existing table is not changed: a change of the key needs a
+        new table. A built-in metric cannot be declared again.
+        """
+        if spec.name in TABLE_SCHEMAS:
+            raise ValueError(f"{spec.name!r} is a built-in metric")
+        cols = spec.columns()
+        with self._schema_lock:
+            self._create_table(
+                self._get_client(), spec.name, cols, ["timestamp", *(spec.key or ())]
+            )
+            self._schemas[spec.name] = cols
+        LOG.info("Metric '%s' registered", spec.name)
+
+    def _schema(self, metric_name: str) -> list[tuple[str, str]]:
+        """Return the columns of a metric, looking up in ClickHouse a table not known.
+
+        shortcut: a table found this way is cached for the life of the process, so a
+        label added later by its writer is not seen by this reader until it restarts.
+        """
+        cols = self._schemas.get(metric_name)
+        if cols is not None:
+            return cols
+        check_identifier(metric_name)
+        cols = self._find_columns(self._get_client(), metric_name)
+        if not cols:
+            raise ValueError(f"Unknown metric table: {metric_name!r}")
+        with self._schema_lock:
+            self._schemas.setdefault(metric_name, cols)
+        return cols
+
+    def ping(self) -> bool:
+        """Return True if ClickHouse answers."""
+        try:
+            return bool(self._get_client().ping())
+        except Exception as e:
+            LOG.warning("ClickHouse ping failed: %s", e)
+            self._drop_client()
+            return False
 
     # ------------------------------------------------------------------
     # TIME ALIGNMENT
@@ -505,10 +603,10 @@ class ClickHouseClient(BaseStorageClient):
     ) -> tuple[str, dict]:
         """Build a parameterized SELECT for clickhouse_connect.
 
-        Column names are validated against TABLE_SCHEMAS; values are parameters.
+        Column names are validated against the columns of the table; values are
+        parameters.
         """
-        if metric_name not in TABLE_SCHEMAS:
-            raise ValueError(f"Unknown metric table: {metric_name!r}")
+        schema = self._schema(metric_name)
 
         params = {
             "start": start.strftime("%Y-%m-%d %H:%M:%S"),
@@ -520,7 +618,7 @@ class ClickHouseClient(BaseStorageClient):
         )
 
         if labels:
-            valid_cols = {c[0] for c in TABLE_SCHEMAS[metric_name]}
+            valid_cols = {c[0] for c in schema}
             for k, v in labels.items():
                 mapped_k = COLUMN_NAME_MAP.get(k, k)
                 if mapped_k not in valid_cols:
@@ -604,14 +702,14 @@ class ClickHouseClient(BaseStorageClient):
 
     def _flush_table(self, table_name: str, rows: list) -> None:
         """Insert a pre-built batch of rows into ClickHouse."""
-        columns = [c[0] for c in TABLE_SCHEMAS[table_name]]
+        columns = [c[0] for c in self._schemas[table_name]]
         self._get_client().insert(table_name, rows, column_names=columns)
 
     def _build_row(self, table_name: str, m: Metric) -> list:
-        """Serialize a Metric into a row list matching TABLE_SCHEMAS column order."""
+        """Serialize a Metric into a row list in the column order of its table."""
         metadata = m.metadata or {}
         row: list[Any] = []
-        for col, col_type in TABLE_SCHEMAS[table_name]:
+        for col, col_type in self._schemas[table_name]:
             if col == "timestamp":
                 ts = m.timestamp
                 if isinstance(ts, str):
@@ -649,7 +747,7 @@ class ClickHouseClient(BaseStorageClient):
 
         with self._buffer_lock:
             for table_name, items in by_table.items():
-                if table_name not in TABLE_SCHEMAS:
+                if table_name not in self._schemas:
                     continue
 
                 rows = [self._build_row(table_name, m) for m in items]
@@ -702,7 +800,14 @@ class ClickHouseClient(BaseStorageClient):
         start, end = self._resolve_time_range(start, end, now=_now)
         sql, query_params = self._build_query(metric_name, start, end, labels)
 
-        df = self._get_client().query_df(sql, parameters=query_params)
+        try:
+            df = self._get_client().query_df(sql, parameters=query_params)
+        except OperationalError as e:
+            # A broken connection (a restart, or the Service moved to another replica):
+            # one more try over a new connection.
+            LOG.warning("ClickHouse read failed, retrying once: %s", e)
+            self._drop_client()
+            df = self._get_client().query_df(sql, parameters=query_params)
 
         if df.empty:
             return []
@@ -715,6 +820,7 @@ class ClickHouseClient(BaseStorageClient):
             val = row[1]
 
             metadata = dict(zip(col_names[2:], row[2:], strict=True))
+            updated_at = metadata.pop("updated_at", None)
             normalized = {
                 REVERSE_COLUMN_NAME_MAP.get(k, k): v for k, v in metadata.items()
             }
@@ -727,10 +833,15 @@ class ClickHouseClient(BaseStorageClient):
 
             metrics.append(
                 Metric(
-                    metric_type=MetricType(metric_name),
+                    metric_type=metric_name,
                     value=round(float(val), 2),
                     timestamp=ts.to_pydatetime().replace(tzinfo=timezone.utc),
                     metadata=normalized,
+                    updated_at=(
+                        None
+                        if updated_at is None
+                        else updated_at.to_pydatetime().replace(tzinfo=timezone.utc)
+                    ),
                 )
             )
 

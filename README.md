@@ -34,12 +34,15 @@ Multiple Wattnet containers compute and expose energy data through their own API
 
 To achieve this, metrics are always stored in a **common format** regardless of how they are represented in the originating domain model:
 
-| Field       | Type       | Description                                                    |
-| ----------- | ---------- | -------------------------------------------------------------- |
-| `name`      | `str`      | Metric identifier (`MetricType` value, e.g. `zone_generation`) |
-| `value`     | `float`    | Numeric measurement                                            |
-| `timestamp` | `datetime` | Point in time the measurement was taken                        |
-| `metadata`  | `dict`     | Arbitrary key-value labels (e.g. `zone`, `source`, `unit`)     |
+| Field        | Type       | Description                                                                          |
+| ------------ | ---------- | ------------------------------------------------------------------------------------ |
+| `name`       | `str`      | Metric identifier (`MetricType` value or declared name, e.g. `zone_generation`)      |
+| `value`      | `float`    | Numeric measurement                                                                  |
+| `timestamp`  | `datetime` | Point in time the measurement was taken                                              |
+| `metadata`   | `dict`     | Arbitrary key-value labels (e.g. `zone`, `source`, `unit`)                           |
+| `updated_at` | `datetime` | When Wattnet stored this version of the value, in UTC. Set on read, `None` on write |
+
+`updated_at` is the time of the last write of the data point by Wattnet, not the time its original source published it. The library sets it when writing, so a value given by the caller is ignored.
 
 Any Wattnet module that needs to persist data translates its domain objects into this format before writing, and reconstructs its own representation after reading. The storage backend in use (ClickHouse, or any future backend) is fully transparent to the caller.
 
@@ -141,8 +144,17 @@ For ClickHouse, these process environment variables are supported:
 | `CLICKHOUSE_DATABASE`            | `wattnet`   | Target database name                          |
 | `CLICKHOUSE_CONNECT_RETRIES`     | `5`         | Number of bootstrap attempts before giving up |
 | `CLICKHOUSE_CONNECT_RETRY_DELAY` | `3`         | Seconds to wait between bootstrap attempts    |
+| `CLICKHOUSE_REPLICATED`          | `false`     | Create replicated database and tables         |
 
 If ClickHouse is unreachable after all attempts, startup fails with a single `RuntimeError` message indicating the host, port, and number of attempts, no deep traceback from the HTTP layer. This also handles the typical docker-compose race condition where ClickHouse is not yet ready when the API container starts.
+
+#### Schema
+
+The database and the tables are created by the library when a service starts, so a new deployment needs no manual step. A column added to a metric in a newer version is added to the existing table at start-up, without touching the data. The order key of an existing table is never changed.
+
+With `CLICKHOUSE_REPLICATED=true` the library works on a ClickHouse cluster with replicas and ClickHouse Keeper: the database is created with the `Replicated` engine and the tables with `ReplicatedReplacingMergeTree`, so every replica gets the same tables and data. Each server needs the macros `shard` and `replica` in its configuration. Setting `database_replicated_allow_only_replicated_engine=1` in the user profile makes ClickHouse refuse any table that would not be replicated. Without the setting, the library uses a normal database and `ReplacingMergeTree`, which is what a single server or local development needs.
+
+A read that finds the connection broken (a restart of ClickHouse, or the service moving to another replica) is retried once over a new connection.
 
 ### Usage
 
@@ -217,6 +229,39 @@ Call `flush()` on the storage client when the application stops, so the rows sti
 | `MIX_SHARE`           | `mix_share`           | Share of generation mix                 |
 | `FOOTPRINT_SHARE`     | `footprint_share`     | Share attributed to carbon footprint    |
 | `IMPACT_SHARE`        | `impact_share`        | Share attributed to carbon impact       |
+
+#### Declaring a new metric
+
+A metric that is not in `MetricType` does not need a new release of this library: the service that writes it declares it with a `MetricSpec` when it starts, and the library creates its table.
+
+```python
+from wattnet.storage.models import Metric, MetricSpec
+
+ZONE_PRICE = MetricSpec(
+    name="zone_price",
+    labels=("zone", "market", "valid", "unit"),
+)
+repo.register_metrics(ZONE_PRICE)
+
+repo.write_metrics(
+    [Metric("zone_price", 52.3, timestamp, {"zone": "ES", "market": "day_ahead"})]
+)
+```
+
+- `labels` are the metadata keys the metric has. Every label is stored as text unless `types` says otherwise (for example `types={"year": "Nullable(Int32)"}`).
+- `key` lists the labels that identify a data point. Two values with the same timestamp and key are versions of one point and only the newest is kept. By default the key is every label except `valid`, `zone_status`, `data_state`, `datasource` and `unit`, which describe the quality or origin of a value. Choose it with care: it cannot change once the table exists.
+- Adding a label to the spec later adds the column to the existing table.
+- Names of metrics and labels must be lowercase letters, digits and underscores.
+
+A service that only reads does not need the spec: `query_metrics("zone_price", ...)` finds the table and its columns in ClickHouse. A metric that is not declared and has no table is not written, and reading it raises `ValueError`.
+
+#### Versions of a data point
+
+`query_metrics` returns one value per data point. ClickHouse already keeps only the newest version of each point, and the repository checks it again: among values with the same timestamp and labels (other than `valid` and `zone_status`) it keeps the valid ones (`valid` true, written as a boolean or read back as text), and among those the best `zone_status` (`complete`, then `preview`, then `missing`).
+
+#### Health check
+
+`repo.ping()` returns `True` when every storage backend answers, for the health endpoint of a service.
 
 ## Logging
 

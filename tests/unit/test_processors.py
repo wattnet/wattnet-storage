@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from wattnet.storage.models.metric import Metric
 from wattnet.storage.models.metric_type import MetricType
 from wattnet.storage.processors.metrics_procesors import filter_best_metrics
@@ -39,6 +41,13 @@ class TestFilterBestMetrics:
         result = filter_best_metrics([valid, invalid])
         assert len(result) == 1
         assert result[0].value == 10.0
+
+    @pytest.mark.parametrize("true, false", [("True", "False"), ("true", "false")])
+    def test_valid_read_back_as_text_is_understood(self, true, false):
+        valid = make_metric(value=10.0, valid=true, zone_status="complete")
+        invalid = make_metric(value=20.0, valid=false, zone_status="complete")
+        result = filter_best_metrics([invalid, valid])
+        assert [m.value for m in result] == [10.0]
 
     def test_valid_true_beats_invalid_regardless_of_zone_status(self):
         valid_missing = make_metric(valid=True, zone_status="missing")

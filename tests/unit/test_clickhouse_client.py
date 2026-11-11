@@ -462,6 +462,76 @@ class TestWriteMetrics:
             ch.write_metrics(metrics)  # must not raise
 
 
+class TestFailedFlushKeepsRows:
+    """A flush that fails puts its rows back in the buffer instead of losing them."""
+
+    @pytest.fixture
+    def idle(self, ch):
+        # Stop the background thread so only the test flushes.
+        ch._stop_event.set()
+        ch._flush_thread.join(timeout=1)
+        return ch
+
+    def _metrics(self, n, start=0):
+        return [Metric(MetricType.ZONE_LOAD, float(i)) for i in range(start, start + n)]
+
+    def test_failed_flush_requeues_rows(self, idle):
+        idle.write_metrics(self._metrics(3))
+        with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
+            idle._flush_all()
+        assert len(idle._buffer["zone_load"]) == 3
+        assert idle._flush_failing
+
+    def test_requeued_rows_are_sent_first_on_recovery(self, idle):
+        idle.write_metrics(self._metrics(2))
+        with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
+            idle._flush_all()
+        idle.write_metrics(self._metrics(1, start=2))
+        with patch.object(idle, "_flush_table") as ok:
+            idle._flush_all()
+        sent = ok.call_args[0][1]
+        assert [row[1] for row in sent] == [0.0, 1.0, 2.0]
+        assert not idle._buffer["zone_load"]
+        assert not idle._flush_failing
+
+    def test_failed_immediate_flush_requeues_rows(self, idle):
+        n = ClickHouseClient._FLUSH_MAX_ROWS + 1
+        with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
+            idle.write_metrics(self._metrics(n))
+        assert len(idle._buffer["zone_load"]) == n
+
+    def test_no_immediate_flush_while_failing(self, idle):
+        idle._flush_failing = True
+        with patch.object(idle, "_flush_table") as flush:
+            idle.write_metrics(self._metrics(ClickHouseClient._FLUSH_MAX_ROWS + 1))
+        flush.assert_not_called()
+
+    def test_buffer_limit_drops_oldest_rows(self, idle):
+        with patch.object(ClickHouseClient, "_MAX_BUFFERED_ROWS", 3):
+            idle.write_metrics(self._metrics(2, start=2))
+            idle._requeue("zone_load", [["a", 0.0], ["b", 1.0]])
+        assert [row[1] for row in idle._buffer["zone_load"]] == [1.0, 2.0, 3.0]
+
+    def test_failed_flush_drops_thread_connection(self, idle):
+        idle._get_client()
+        idle.write_metrics(self._metrics(1))
+        with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
+            idle._flush_all()
+        assert not hasattr(idle._local, "client")
+
+    def test_error_closing_the_dropped_connection_is_ignored(self, idle):
+        idle._get_client().close.side_effect = RuntimeError("already closed")
+        idle._drop_client()  # must not raise
+        assert not hasattr(idle._local, "client")
+
+    def test_shutdown_logs_rows_it_could_not_send(self, idle, caplog):
+        idle.write_metrics(self._metrics(4))
+        with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
+            idle._flush_all()
+        idle.flush()
+        assert "4 buffered rows lost" in caplog.text
+
+
 # ---------------------------------------------------------------------------
 # _resolve_time_range — error paths
 # ---------------------------------------------------------------------------

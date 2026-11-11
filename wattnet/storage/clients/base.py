@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic_settings import BaseSettings
 
-from wattnet.storage.models import Metric
+from wattnet.storage.models import Metric, MetricSpec
 
 
 class BaseStorageClient(metaclass=ABCMeta):
@@ -49,3 +49,15 @@ class BaseStorageClient(metaclass=ABCMeta):
         :type metrics: list[Metric]
         """
         pass
+
+    # Not abstract, so a backend written before they existed keeps working.
+
+    def register_metric(self, spec: MetricSpec) -> None:
+        """Prepare the backend to store a metric declared by the application."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support declared metrics"
+        )
+
+    def ping(self) -> bool:
+        """Return True if the backend answers."""
+        raise NotImplementedError(f"{type(self).__name__} does not support ping")

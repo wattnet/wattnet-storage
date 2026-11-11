@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from wattnet.storage.config import StorageConfig
-from wattnet.storage.models import Metric
+from wattnet.storage.models import Metric, MetricSpec
 from wattnet.storage.utils import log, plugin_loader
 
 # Get logger
@@ -79,7 +79,7 @@ class StorageClientsManager:
         """
         all_metrics = []
         for client_name, client in self.storage_clients.items():
-            LOG.info(f"Reading metrics from storage client '{client_name}'")
+            LOG.debug("Reading metrics from storage client '%s'", client_name)
             metrics = client.read_metrics(metric_name, start, end, labels, params)
             all_metrics.extend(metrics)
         return all_metrics
@@ -91,5 +91,14 @@ class StorageClientsManager:
         :type metrics: list[Metric]
         """
         for client_name, client in self.storage_clients.items():
-            LOG.info(f"Writing metrics to storage client '{client_name}'")
+            LOG.debug("Writing metrics to storage client '%s'", client_name)
             client.write_metrics(metrics)
+
+    def register_metric(self, spec: MetricSpec) -> None:
+        """Declare a metric in all storage clients."""
+        for client in self.storage_clients.values():
+            client.register_metric(spec)
+
+    def ping(self) -> bool:
+        """Return True if every storage client answers."""
+        return all(client.ping() for client in self.storage_clients.values())

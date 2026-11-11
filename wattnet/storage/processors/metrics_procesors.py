@@ -13,6 +13,11 @@ ZONE_STATUS_PRIORITY = {"missing": 0, "preview": 1, "complete": 2}
 LOG = log.get(__name__)
 
 
+def _is_valid(metric: Metric) -> bool:
+    """Return True if the label valid is true (a bool when written, text when read)."""
+    return str(metric.metadata.get("valid")).lower() == "true"
+
+
 def filter_best_metrics(metrics: List[Metric]) -> List[Metric]:
     """Filter metrics, keeping the best version of each logical data point.
 
@@ -47,7 +52,7 @@ def filter_best_metrics(metrics: List[Metric]) -> List[Metric]:
     filtered_metrics = []
     for metric_list in metrics_by_key.values():
         # Prefer valid=True
-        valid_true_metrics = [m for m in metric_list if m.metadata.get("valid") is True]
+        valid_true_metrics = [m for m in metric_list if _is_valid(m)]
         candidates = valid_true_metrics if valid_true_metrics else metric_list
 
         # Pick highest zone_status priority

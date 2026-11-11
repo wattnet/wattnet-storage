@@ -360,3 +360,61 @@ class TestAutoFlush:
                 break
             time.sleep(0.3)
         assert direct_count("zone_load") == 1
+
+
+class TestDeclaredMetrics:
+    """A metric declared by its writer is read by a client that does not know it."""
+
+    def test_writer_declares_reader_discovers(self, ch_client):
+        from wattnet.storage.config import StorageConfig
+        from wattnet.storage.models import MetricSpec
+
+        name = "test_declared_price"
+        ch_client.register_metric(MetricSpec(name, ("zone", "market", "valid")))
+        ch_client.write_metrics(
+            [
+                Metric(
+                    name, 42.0, TS, {"zone": "ES", "market": "day_ahead", "valid": True}
+                )
+            ]
+        )
+        flush_and_wait(ch_client, name)
+
+        reader = ClickHouseClient(
+            config=StorageConfig(
+                plugin_configs={
+                    "clickhouse": {
+                        "host": CLICKHOUSE_TEST_HOST,
+                        "port": CLICKHOUSE_TEST_PORT,
+                        "database": CLICKHOUSE_TEST_DB,
+                    }
+                }
+            )
+        )
+        try:
+            result = reader.read_metrics(
+                name, TS, TS + timedelta(minutes=15), labels={"zone": "ES"}
+            )
+        finally:
+            reader.flush()
+        assert [(m.name, m.value, m.metadata["market"]) for m in result] == [
+            (name, 42.0, "day_ahead")
+        ]
+        assert "updated_at" not in result[0].metadata
+        assert result[0].updated_at.tzinfo is timezone.utc
+
+    def test_a_new_label_is_added_to_the_existing_table(self, ch_client):
+        from wattnet.storage.models import MetricSpec
+
+        name = "test_declared_growing"
+        ch_client.register_metric(MetricSpec(name, ("zone",)))
+        ch_client.register_metric(MetricSpec(name, ("zone", "market")))
+        root = clickhouse_connect.get_client(
+            host=CLICKHOUSE_TEST_HOST, port=CLICKHOUSE_TEST_PORT
+        )
+        cols = root.query(
+            "SELECT name FROM system.columns WHERE database = {db:String} AND table = {t:String}",
+            parameters={"db": CLICKHOUSE_TEST_DB, "t": name},
+        ).result_rows
+        root.close()
+        assert ("market",) in cols

@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import clickhouse_connect
+import pytest
 
 from wattnet.storage.clients.plugins.clickhouse import TABLE_SCHEMAS, ClickHouseClient
 from wattnet.storage.models import Metric, MetricType
@@ -187,7 +188,7 @@ class TestReadMetrics:
         )
         assert result[0].name == "zone_generation"
 
-    def test_read_metric_value_rounded_to_two_decimals(self, ch_client):
+    def test_read_metric_value_is_not_rounded(self, ch_client):
         m = Metric(
             MetricType.ZONE_GENERATION, 3.14159, timestamp=TS, metadata={"zone": "ES"}
         )
@@ -195,7 +196,8 @@ class TestReadMetrics:
         result = ch_client.read_metrics(
             "zone_generation", start=TS, end=TS + timedelta(minutes=15)
         )
-        assert result[0].value == round(3.14159, 2)
+        # The column is a Float32, so the value comes back as that float, not rounded to decimals.
+        assert result[0].value == pytest.approx(3.14159, rel=1e-6)
 
     def test_read_with_zone_label_filter(self, ch_client):
         es = Metric(

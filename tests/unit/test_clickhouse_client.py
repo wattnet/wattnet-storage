@@ -675,7 +675,7 @@ class TestReadMetrics:
         assert len(result) == 1
         assert isinstance(result[0], Metric)
 
-    def test_value_rounded_to_two_decimals(self, ch, mock_ch_connect):
+    def test_value_is_returned_as_stored(self, ch, mock_ch_connect):
         import pandas as pd
 
         df = pd.DataFrame(
@@ -690,7 +690,7 @@ class TestReadMetrics:
             start=datetime(2024, 1, 1, 12, 0),
             end=datetime(2024, 1, 1, 12, 15),
         )
-        assert result[0].value == 42.57
+        assert result[0].value == 42.567
 
     def test_timestamp_gets_utc_timezone(self, ch, mock_ch_connect):
         import pandas as pd

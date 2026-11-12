@@ -834,7 +834,7 @@ class ClickHouseClient(BaseStorageClient):
             metrics.append(
                 Metric(
                     metric_type=metric_name,
-                    value=round(float(val), 2),
+                    value=float(val),
                     timestamp=ts.to_pydatetime().replace(tzinfo=timezone.utc),
                     metadata=normalized,
                     updated_at=(

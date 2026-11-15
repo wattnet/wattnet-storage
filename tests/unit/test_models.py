@@ -183,3 +183,56 @@ class TestMetric:
 
     def test_top_level_import_is_same_class(self):
         assert Metric is MetricDirect
+
+
+class TestSharedMetadata:
+    def test_it_is_read_only(self):
+        from wattnet.storage.models.metric import SharedMetadata
+
+        shared = SharedMetadata({"zone": "ES"})
+        for write in (
+            lambda: shared.__setitem__("zone", "FR"),
+            lambda: shared.__delitem__("zone"),
+            lambda: shared.update(zone="FR"),
+            lambda: shared.pop("zone"),
+            lambda: shared.popitem(),
+            lambda: shared.clear(),
+            lambda: shared.setdefault("x", 1),
+            lambda: shared.__ior__({"x": 1}),
+        ):
+            with pytest.raises(TypeError):
+                write()
+        assert shared == {"zone": "ES"} and shared.get("zone") == "ES"
+
+    def test_a_copy_is_a_plain_dict_that_can_change(self):
+        import copy
+        import pickle
+
+        from wattnet.storage.models.metric import SharedMetadata
+
+        shared = SharedMetadata({"zone": "ES"})
+        for other in (copy.copy(shared), copy.deepcopy(shared), pickle.loads(pickle.dumps(shared))):
+            assert type(other) is dict and other == {"zone": "ES"}
+            other["zone"] = "FR"
+        assert shared == {"zone": "ES"}
+
+    def test_add_metadata_gives_the_metric_its_own_copy(self):
+        from wattnet.storage.models.metric import SharedMetadata
+
+        shared = SharedMetadata({"zone": "ES"})
+        a = Metric("zone_load", 1.0, datetime(2026, 1, 1), shared)
+        b = Metric("zone_load", 2.0, datetime(2026, 1, 1), shared)
+        a.add_metadata("unit", "MW")
+        assert a.metadata == {"zone": "ES", "unit": "MW"}
+        assert b.metadata == {"zone": "ES"} and shared == {"zone": "ES"}
+        a.add_metadata("source", "x")  # already its own: no new copy
+        assert a.metadata["source"] == "x"
+
+
+class TestMetricAttributes:
+    def test_a_metric_has_no_attributes_but_its_own(self):
+        metric = Metric("zone_load", 1.0, datetime(2026, 1, 1), {"zone": "ES"})
+        with pytest.raises(AttributeError):
+            metric.zone = "ES"  # what does not fit goes in the metadata
+        metric.add_metadata("zone", "ES")
+        assert metric.metadata["zone"] == "ES"

@@ -173,3 +173,52 @@ class TestFilterBestMetrics:
                 )
         result = filter_best_metrics(metrics)
         assert all(m.metadata["valid"] is True for m in result)
+
+
+def _reference_best(metrics):
+    """The filter as it was written first, with a list and a group for every point."""
+    from collections import defaultdict
+
+    from wattnet.storage.processors.metrics_procesors import ZONE_STATUS_PRIORITY, _is_valid
+
+    keys = [set(m.metadata) for m in metrics]
+    common = set.intersection(*keys) - {"valid", "zone_status"}
+    groups = defaultdict(list)
+    for m in metrics:
+        groups[(m.timestamp, m.name) + tuple(m.metadata.get(k) for k in sorted(common))].append(m)
+    out = []
+    for group in groups.values():
+        candidates = [m for m in group if _is_valid(m)] or group
+        top = max(ZONE_STATUS_PRIORITY.get(m.metadata.get("zone_status", "missing"), 0) for m in candidates)
+        out.extend(
+            m for m in candidates
+            if ZONE_STATUS_PRIORITY.get(m.metadata.get("zone_status", "missing"), 0) == top
+        )
+    return out
+
+
+def test_filter_best_metrics_matches_the_first_version_on_random_data():
+    """The single pass keeps the same metrics, in the same order, as the grouping."""
+    import random
+    from datetime import datetime, timedelta
+
+    from wattnet.storage.models.metric import Metric
+    from wattnet.storage.processors.metrics_procesors import filter_best_metrics
+
+    rng = random.Random(7)
+    start = datetime(2026, 1, 1)
+    metrics = [
+        Metric(
+            "zone_load",
+            float(i),
+            start + timedelta(minutes=15 * rng.randrange(40)),
+            {
+                "zone": rng.choice(["ES", "FR"]),
+                "valid": rng.choice(["true", "false", "True"]),
+                "zone_status": rng.choice(["complete", "preview", "missing", "other"]),
+            },
+        )
+        for i in range(600)
+    ]
+    # Metric has no __eq__, so the lists are equal only if they hold the same objects
+    assert filter_best_metrics(metrics) == _reference_best(metrics)

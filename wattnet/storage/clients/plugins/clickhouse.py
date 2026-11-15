@@ -48,6 +48,9 @@ class ClickHouseConfig(BaseSettings):
     # True on a ClickHouse cluster with replicas and Keeper: the database is created
     # with the Replicated engine and the tables with ReplicatedReplacingMergeTree.
     replicated: bool = False
+    # False for a client that only reads and finds the tables made by someone else: it
+    # does not create the database or the tables when it starts, and needs no CREATE.
+    bootstrap: bool = True
 
     model_config = SettingsConfigDict(
         env_prefix="CLICKHOUSE_",
@@ -303,31 +306,39 @@ class ClickHouseClient(BaseStorageClient):
             self.replicated,
         )
 
-        # 1. Bootstrap: create DB + tables using a root client (no database)
-        for attempt in range(1, self._connect_retries + 1):
-            try:
-                self._bootstrap_schema()
-                break
-            except Exception as e:
-                if attempt == self._connect_retries:
-                    LOG.error(
-                        "ClickHouse bootstrap attempt %d/%d failed: %s — giving up.",
+        # 1. Bootstrap: create DB + tables using a root client (no database). A client
+        # that only reads, with the tables made apart (a Job of the deployment), skips
+        # it: on a replicated database every CREATE goes through the DDL queue and
+        # waits for the replicas, which takes seconds for each of the 16 tables.
+        if not ch.bootstrap:
+            LOG.info("Schema bootstrap skipped (CLICKHOUSE_BOOTSTRAP=false)")
+        else:
+            for attempt in range(1, self._connect_retries + 1):
+                try:
+                    self._bootstrap_schema()
+                    break
+                except Exception as e:
+                    if attempt == self._connect_retries:
+                        LOG.error(
+                            "ClickHouse bootstrap attempt %d/%d failed: %s"
+                            " — giving up.",
+                            attempt,
+                            self._connect_retries,
+                            e,
+                        )
+                        raise RuntimeError(
+                            f"ClickHouse not available at {self.host}:{self.port} "
+                            f"after {self._connect_retries} attempts — cannot start."
+                        ) from e
+                    LOG.warning(
+                        "ClickHouse bootstrap attempt %d/%d failed: %s"
+                        " — retrying in %ds",
                         attempt,
                         self._connect_retries,
                         e,
+                        self._connect_retry_delay,
                     )
-                    raise RuntimeError(
-                        f"ClickHouse not available at {self.host}:{self.port} "
-                        f"after {self._connect_retries} attempts — cannot start."
-                    ) from e
-                LOG.warning(
-                    "ClickHouse bootstrap attempt %d/%d failed: %s — retrying in %ds",
-                    attempt,
-                    self._connect_retries,
-                    e,
-                    self._connect_retry_delay,
-                )
-                time.sleep(self._connect_retry_delay)
+                    time.sleep(self._connect_retry_delay)
 
         # 2. Thread-local client storage — each thread gets its own connection.
         # clickhouse_connect does NOT support concurrent queries on the same session,

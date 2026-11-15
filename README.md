@@ -145,6 +145,7 @@ For ClickHouse, these process environment variables are supported:
 | `CLICKHOUSE_CONNECT_RETRIES`     | `5`         | Number of bootstrap attempts before giving up |
 | `CLICKHOUSE_CONNECT_RETRY_DELAY` | `3`         | Seconds to wait between bootstrap attempts    |
 | `CLICKHOUSE_REPLICATED`          | `false`     | Create replicated database and tables         |
+| `CLICKHOUSE_BOOTSTRAP`           | `true`      | Create the database and the tables when starting; `false` for a client that only reads tables made by someone else |
 
 If ClickHouse is unreachable after all attempts, startup fails with a single `RuntimeError` message indicating the host, port, and number of attempts, no deep traceback from the HTTP layer. This also handles the typical docker-compose race condition where ClickHouse is not yet ready when the API container starts.
 

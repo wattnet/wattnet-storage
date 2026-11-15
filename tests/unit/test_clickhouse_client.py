@@ -875,6 +875,22 @@ class TestBootstrapRetryLogic:
                     self._make_client(self._retry_config(retries=3, delay=5))
             mock_sleep.assert_called_once_with(5)
 
+    def test_bootstrap_false_does_not_create_the_schema(self):
+        config = self._retry_config()
+        config.plugin_configs["clickhouse"]["bootstrap"] = False
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch.object(ClickHouseClient, "_bootstrap_schema") as bootstrap:
+                client = self._make_client(config)
+        bootstrap.assert_not_called()
+        # the columns of the built-in tables are known without the bootstrap
+        assert "zone_mix" in client._schemas
+
+    def test_bootstrap_is_on_by_default(self):
+        with patch("clickhouse_connect.get_client", return_value=MagicMock()):
+            with patch.object(ClickHouseClient, "_bootstrap_schema") as bootstrap:
+                self._make_client(self._retry_config())
+        bootstrap.assert_called_once()
+
     def test_all_retries_exhausted_raises_runtime_error(self):
         with patch("clickhouse_connect.get_client", return_value=MagicMock()):
             with patch(self._SLEEP_PATH):

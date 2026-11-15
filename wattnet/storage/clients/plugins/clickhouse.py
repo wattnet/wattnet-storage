@@ -15,6 +15,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from wattnet.storage.clients.base import BaseStorageClient
 from wattnet.storage.config import StorageConfig
 from wattnet.storage.models import Metric, MetricSpec
+from wattnet.storage.models.metric import SharedMetadata
 from wattnet.storage.models.metric_spec import check_identifier
 
 LOG = logging.getLogger(__name__)
@@ -812,36 +813,65 @@ class ClickHouseClient(BaseStorageClient):
         if df.empty:
             return []
 
+        return self._to_metrics(metric_name, df)
+
+    @staticmethod
+    def _column_values(series: Any, convert: Any = None) -> list:
+        """Return the values of a column as a list that shares its repeated objects.
+
+        A pandas text column gives a new Python string for each cell, and a read of a
+        year has half a million rows with a few distinct values. Going through the
+        distinct values keeps one object for each of them. ``convert`` turns each
+        distinct value into the object to hold (for a datetime, one with its zone).
+        """
+        if series.dtype.kind in "iuf":
+            return cast(list, series.tolist())
+        codes, uniques = series.factorize()
+        distinct = uniques.tolist()
+        if convert is not None:
+            distinct = [convert(v) for v in distinct]
+        return [None if c < 0 else distinct[c] for c in codes.tolist()]
+
+    def _to_metrics(self, metric_name: str, df: Any) -> list[Metric]:
+        """Turn the result of a query into Metric objects, one per row."""
+
+        def utc(value: Any) -> datetime:
+            return cast(datetime, value.to_pydatetime().replace(tzinfo=timezone.utc))
+
+        names = list(df.columns)
+        timestamps = self._column_values(df[names[0]], utc)
+        values = df[names[1]].astype(float).tolist()
+        metadata_names = [n for n in names[2:] if n != "updated_at"]
+        keys = [REVERSE_COLUMN_NAME_MAP.get(k, k) for k in metadata_names]
+        columns = [self._column_values(df[k]) for k in metadata_names]
+        if "updated_at" in names:
+            updated = self._column_values(df["updated_at"], utc)
+        else:
+            updated = [None] * len(df)
         metrics = []
-        col_names = list(df.columns)
+        # The rows with the same labels share one read only dictionary of metadata.
+        shared: dict = {}
 
-        for row in df.itertuples(index=False):
-            ts = row[0]
-            val = row[1]
-
-            metadata = dict(zip(col_names[2:], row[2:], strict=True))
-            updated_at = metadata.pop("updated_at", None)
-            normalized = {
-                REVERSE_COLUMN_NAME_MAP.get(k, k): v for k, v in metadata.items()
-            }
-
-            if "year" in normalized:
-                try:
-                    normalized["year"] = int(normalized["year"])
-                except Exception:
-                    normalized["year"] = None
+        for ts, val, updated_at, *cells in zip(
+            timestamps, values, updated, *columns, strict=True
+        ):
+            normalized = shared.get(tuple(cells))
+            if normalized is None:
+                normalized = dict(zip(keys, cells, strict=True))
+                if "year" in normalized:
+                    try:
+                        normalized["year"] = int(normalized["year"])
+                    except Exception:
+                        normalized["year"] = None
+                normalized = shared[tuple(cells)] = SharedMetadata(normalized)
 
             metrics.append(
                 Metric(
                     metric_type=metric_name,
-                    value=float(val),
-                    timestamp=ts.to_pydatetime().replace(tzinfo=timezone.utc),
+                    value=val,
+                    timestamp=ts,
                     metadata=normalized,
-                    updated_at=(
-                        None
-                        if updated_at is None
-                        else updated_at.to_pydatetime().replace(tzinfo=timezone.utc)
-                    ),
+                    updated_at=updated_at,
                 )
             )
 

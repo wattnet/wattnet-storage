@@ -174,9 +174,11 @@ class TestReadUnknownMetric:
     def test_read_metrics_returns_metrics_named_by_the_table(self, db):
         client = _client()
         with patch.object(client, "_schema", return_value=[("timestamp", "DateTime")]):
-            df = MagicMock(empty=False, columns=["timestamp", "value"])
-            df.itertuples.return_value = [(MagicMock(), 3.0)]
-            db.query_df.return_value = df
+            import pandas as pd
+
+            db.query_df.return_value = pd.DataFrame(
+                {"timestamp": [pd.Timestamp("2026-01-01")], "value": [3.0]}
+            )
             metrics = client.read_metrics(
                 "zone_price", datetime(2026, 1, 1), datetime(2026, 1, 2)
             )
@@ -190,11 +192,14 @@ class TestUpdatedAt:
 
         client = _client()
         written = pd.Timestamp("2026-01-01 12:00:00")
-        df = MagicMock(
-            empty=False, columns=["timestamp", "value", "zone", "updated_at"]
+        db.query_df.return_value = pd.DataFrame(
+            {
+                "timestamp": [pd.Timestamp("2026-01-01")],
+                "value": [3.0],
+                "zone": ["ES"],
+                "updated_at": [written],
+            }
         )
-        df.itertuples.return_value = [(pd.Timestamp("2026-01-01"), 3.0, "ES", written)]
-        db.query_df.return_value = df
         (metric,) = client.read_metrics(
             "zone_load", datetime(2026, 1, 1), datetime(2026, 1, 2)
         )

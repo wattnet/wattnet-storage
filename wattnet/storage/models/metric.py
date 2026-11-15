@@ -5,8 +5,36 @@ from datetime import datetime
 from wattnet.storage.models.metric_type import MetricType
 
 
+class SharedMetadata(dict):
+    """Metadata that many metrics read from the storage hold in common.
+
+    A read of a year is half a million metrics with a few different sets of labels, so
+    they point to one dictionary for each set instead of having one each. It is read
+    only: writing to it raises a TypeError, so that no metric changes the others. To
+    change the labels of a metric use ``Metric.add_metadata``, which gives the metric
+    its own copy, or ``dict(metadata)``. A copy or a pickle of it is a plain dict.
+    """
+
+    def _read_only(self, *args, **kwargs):
+        raise TypeError("shared metadata is read only: copy it with dict() first")
+
+    __setitem__ = __delitem__ = __ior__ = _read_only
+    update = pop = popitem = clear = setdefault = _read_only
+
+    def __reduce__(self):
+        """Copy and pickle as a plain dict."""
+        return (dict, (dict(self),))
+
+
 class Metric:
-    """Class representing a metric."""
+    """Class representing a metric.
+
+    It has these attributes and no others: whatever does not fit them goes in the
+    metadata. Without a dictionary of its own an object takes less memory, and a read
+    of a year creates half a million of them.
+    """
+
+    __slots__ = ("name", "value", "timestamp", "metadata", "updated_at")
 
     def __init__(
         self,
@@ -62,6 +90,8 @@ class Metric:
         :param value: The value of the metadata
         :type value: str
         """
+        if isinstance(self.metadata, SharedMetadata):
+            self.metadata = dict(self.metadata)  # its own copy, not the shared one
         self.metadata[key] = value
 
     def to_dict(self) -> dict:

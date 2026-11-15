@@ -692,6 +692,28 @@ class TestReadMetrics:
         )
         assert result[0].value == 42.567
 
+    def test_rows_with_the_same_labels_share_their_metadata(self, ch, mock_ch_connect):
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {
+                "timestamp": pd.to_datetime(["2024-01-01 12:00", "2024-01-01 12:15", "2024-01-01 12:30"]),
+                "value": [1.0, 2.0, 3.0],
+                "zone": ["ES", "ES", "FR"],
+            }
+        )
+        mock_ch_connect.query_df.return_value = df
+        result = ch.read_metrics(
+            "zone_generation",
+            start=datetime(2024, 1, 1, 12, 0),
+            end=datetime(2024, 1, 1, 13, 0),
+        )
+        assert result[0].metadata is result[1].metadata
+        assert result[0].metadata is not result[2].metadata
+        assert [m.metadata["zone"] for m in result] == ["ES", "ES", "FR"]
+        with pytest.raises(TypeError):
+            result[0].metadata["zone"] = "XX"
+
     def test_timestamp_gets_utc_timezone(self, ch, mock_ch_connect):
         import pandas as pd
 

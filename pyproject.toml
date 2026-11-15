@@ -23,7 +23,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -39,7 +38,7 @@ clickhouse = "wattnet.storage.clients.plugins.clickhouse:ClickHouseClient"
 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.15"
+python = ">=3.11,<3.15"
 stevedore = "^5.7.0"
 clickhouse-connect = {version = "^1.0", extras = ["pandas"]}
 pydantic = "^2.0"
@@ -82,7 +81,7 @@ omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 src = ["wattnet"]
 extend-exclude = ["env"]
 
@@ -114,7 +113,7 @@ DEP002 = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true

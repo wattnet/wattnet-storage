@@ -56,7 +56,7 @@ The client layer is plugin-based (via [stevedore](https://docs.openstack.org/ste
 
 ## Requirements
 
-- Python ≥ 3.10
+- Python ≥ 3.11
 - Docker and Docker Compose (for the storage backend)
 
 ## Backend Setup

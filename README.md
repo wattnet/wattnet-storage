@@ -260,6 +260,16 @@ A service that only reads does not need the spec: `query_metrics("zone_price", .
 
 `query_metrics` returns one value per data point. ClickHouse already keeps only the newest version of each point, and the repository checks it again: among values with the same timestamp and labels (other than `valid` and `zone_status`) it keeps the valid ones (`valid` true, written as a boolean or read back as text), and among those the best `zone_status` (`complete`, then `preview`, then `missing`).
 
+#### Resampled series
+
+A long range at the interval of the series is a lot of rows. `query_metrics(..., resolution_minutes=60)` returns the series averaged in buckets of that many minutes (a multiple of the interval of the series), and ClickHouse does the average, so far fewer rows travel. Without it the series comes as stored.
+
+- A bucket starts at the `start` of the query and lasts the resolution, so the first one is whole and the last one may be shorter. Its metric has the start of the bucket as `timestamp`.
+- The series with different labels (another `datasource`, a `production_type`...) stay apart, as they do unaveraged.
+- `valid` of a bucket is `true` only if all its points are, `zone_status` is the worst of them (`missing`, then `preview`, then `complete`) and `updated_at` the latest.
+- A table that has no `valid` or `zone_status` (the factors) has none in its buckets.
+- An average of rates and intensities is meaningful (power, footprints); an average of shares or of a value per year is not what the caller may want, so choose it with the metric in mind.
+
 #### Health check
 
 `repo.ping()` returns `True` when every storage backend answers, for the health endpoint of a service.

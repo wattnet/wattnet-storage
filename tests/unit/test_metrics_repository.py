@@ -43,6 +43,9 @@ class TestMetricsRepositoryInit:
         assert r.step == 15 * 60
 
 
+TS = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+
 class TestQueryMetrics:
     def test_returns_list(self, repo, mock_manager):
         mock_manager.read_metrics.return_value = []
@@ -60,6 +63,27 @@ class TestQueryMetrics:
             start=start,
             end=end,
             labels={"zone": "ES"},
+        )
+
+    def test_resolution_is_passed_on_and_the_series_is_not_filtered_again(
+        self, repo, mock_manager
+    ):
+        """The query of a resampled series has already chosen what to keep."""
+        rows = [
+            Metric(
+                MetricType.ZONE_LOAD, 1.0, timestamp=TS, metadata={"valid": "false"}
+            ),
+            Metric(MetricType.ZONE_LOAD, 2.0, timestamp=TS, metadata={"valid": "true"}),
+        ]
+        mock_manager.read_metrics.return_value = rows
+        result = repo.query_metrics("zone_load", resolution_minutes=60)
+        assert result == rows
+        mock_manager.read_metrics.assert_called_once_with(
+            metric_name="zone_load",
+            start=None,
+            end=None,
+            labels=None,
+            params={"resolution_minutes": 60},
         )
 
     def test_applies_filter_best_metrics(self, repo, mock_manager):

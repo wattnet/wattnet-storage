@@ -252,11 +252,19 @@ COLUMN_NAME_MAP = {
 
 REVERSE_COLUMN_NAME_MAP = {v: k for k, v in COLUMN_NAME_MAP.items()}
 
-_METRIC_QUERY_TEMPLATE = (
-    "SELECT * FROM {table} FINAL"
+_METRIC_FROM_TEMPLATE = (
+    " FROM {table} FINAL"
     " WHERE timestamp >= toDateTime({start:String})"
     "   AND timestamp <  toDateTime({end:String})"
 )
+_METRIC_QUERY_TEMPLATE = "SELECT *" + _METRIC_FROM_TEMPLATE
+
+# Order of the status of a zone, from the worst to the best.
+_STATUS_RANK_EXPR = (
+    "multiIf(zone_status = 'complete', 2, zone_status = 'preview', 1, 0)"
+)
+# Columns that are not labels of the series.
+_NOT_LABELS = {"timestamp", "value", "valid", "zone_status", "updated_at"}
 
 
 class ClickHouseClient(BaseStorageClient):
@@ -612,11 +620,13 @@ class ClickHouseClient(BaseStorageClient):
         start: datetime,
         end: datetime,
         labels: dict | None = None,
+        resolution_minutes: int | None = None,
     ) -> tuple[str, dict]:
         """Build a parameterized SELECT for clickhouse_connect.
 
         Column names are validated against the columns of the table; values are
-        parameters.
+        parameters. With ``resolution_minutes`` the series comes resampled: see
+        ``_resampled_query``.
         """
         schema = self._schema(metric_name)
 
@@ -625,7 +635,7 @@ class ClickHouseClient(BaseStorageClient):
             "end": end.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        sql = _METRIC_QUERY_TEMPLATE.replace(
+        from_where = _METRIC_FROM_TEMPLATE.replace(
             "{table}", self.database + "." + metric_name
         )
 
@@ -636,11 +646,51 @@ class ClickHouseClient(BaseStorageClient):
                 if mapped_k not in valid_cols:
                     continue
                 param_key = f"label_{mapped_k}"
-                sql += f" AND {mapped_k} = {{{param_key}:String}}"
+                from_where += f" AND {mapped_k} = {{{param_key}:String}}"
                 params[param_key] = str(v)
 
-        sql += " ORDER BY timestamp ASC"
-        return sql, params
+        if resolution_minutes is not None:
+            return self._resampled_query(schema, from_where, resolution_minutes), {
+                **params,
+                "bucket_seconds": resolution_minutes * 60,
+            }
+        return "SELECT *" + from_where + " ORDER BY timestamp ASC", params
+
+    @staticmethod
+    def _resampled_query(
+        schema: list[tuple[str, str]], from_where: str, resolution_minutes: int
+    ) -> str:
+        """Build the query of a series averaged in buckets of ``resolution_minutes``.
+
+        A bucket starts at the ``start`` of the query and lasts the resolution, so the
+        first one is always whole and the last may be shorter. ``FINAL`` leaves one
+        version of each point (the sort key has no ``valid``, ``zone_status``,
+        ``data_state`` or ``datasource``), which is what ``filter_best_metrics`` would
+        find, and the values of the bucket are averaged. The points with a different
+        label (a ``datasource``, a ``production_type``) stay apart, as they do
+        unaveraged. A bucket is valid if all its points are, and has the worst status
+        of its zone. Its ``updated_at`` is the latest of its points.
+        """
+        cols = [c for c, _ in schema]
+        labels = [c for c in cols if c not in _NOT_LABELS]
+        bucket = (
+            "toDateTime({start:String}) + intDiv("
+            "toUnixTimestamp(timestamp) - toUnixTimestamp(toDateTime({start:String})), "
+            "{bucket_seconds:UInt32}) * {bucket_seconds:UInt32}"
+        )
+        select = [f"{bucket} AS bucket_start", "avg(value) AS value", *labels]
+        if "valid" in cols:
+            select.append("if(countIf(valid != 'true') = 0, 'true', 'false') AS valid")
+        if "zone_status" in cols:
+            select.append(f"argMin(zone_status, {_STATUS_RANK_EXPR}) AS zone_status")
+        if "updated_at" in cols:
+            select.append("max(updated_at) AS updated_at")
+        group = ", ".join(["bucket_start", *labels])
+        # The first column is the start of the bucket, as the timestamp of its metric.
+        return (
+            f"SELECT {', '.join(select)}{from_where}"
+            f" GROUP BY {group} ORDER BY bucket_start ASC"
+        )
 
     # ------------------------------------------------------------------
     # WRITE — buffered batch path
@@ -810,7 +860,17 @@ class ClickHouseClient(BaseStorageClient):
         deserialization at high row counts.
         """
         start, end = self._resolve_time_range(start, end, now=_now)
-        sql, query_params = self._build_query(metric_name, start, end, labels)
+        resolution = (params or {}).get("resolution_minutes")
+        if resolution is not None and (
+            resolution <= 0 or resolution % self.interval_minutes
+        ):
+            raise ValueError(
+                f"resolution_minutes must be a multiple of {self.interval_minutes}, "
+                f"got {resolution}"
+            )
+        sql, query_params = self._build_query(
+            metric_name, start, end, labels, resolution
+        )
 
         try:
             df = self._get_client().query_df(sql, parameters=query_params)

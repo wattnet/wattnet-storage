@@ -86,6 +86,19 @@ class TestQueryMetrics:
             params={"resolution_minutes": 60},
         )
 
+    def test_min_value_is_passed_on_with_or_without_a_resolution(
+        self, repo, mock_manager
+    ):
+        """The bound travels in the params, alone or with the resolution."""
+        mock_manager.read_metrics.return_value = []
+        repo.query_metrics("zone_load", min_value=0)
+        assert mock_manager.read_metrics.call_args.kwargs["params"] == {"min_value": 0}
+        repo.query_metrics("zone_load", resolution_minutes=60, min_value=0)
+        assert mock_manager.read_metrics.call_args.kwargs["params"] == {
+            "resolution_minutes": 60,
+            "min_value": 0,
+        }
+
     def test_applies_filter_best_metrics(self, repo, mock_manager):
         m = Metric(
             MetricType.ZONE_GENERATION,

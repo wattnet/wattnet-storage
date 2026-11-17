@@ -257,7 +257,6 @@ _METRIC_FROM_TEMPLATE = (
     " WHERE timestamp >= toDateTime({start:String})"
     "   AND timestamp <  toDateTime({end:String})"
 )
-_METRIC_QUERY_TEMPLATE = "SELECT *" + _METRIC_FROM_TEMPLATE
 
 # Order of the status of a zone, from the worst to the best.
 _STATUS_RANK_EXPR = (
@@ -621,16 +620,18 @@ class ClickHouseClient(BaseStorageClient):
         end: datetime,
         labels: dict | None = None,
         resolution_minutes: int | None = None,
+        min_value: float | None = None,
     ) -> tuple[str, dict]:
         """Build a parameterized SELECT for clickhouse_connect.
 
         Column names are validated against the columns of the table; values are
         parameters. With ``resolution_minutes`` the series comes resampled: see
-        ``_resampled_query``.
+        ``_resampled_query``. With ``min_value`` the rows below it are left out, before
+        any average.
         """
         schema = self._schema(metric_name)
 
-        params = {
+        params: dict[str, Any] = {
             "start": start.strftime("%Y-%m-%d %H:%M:%S"),
             "end": end.strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -649,6 +650,10 @@ class ClickHouseClient(BaseStorageClient):
                 from_where += f" AND {mapped_k} = {{{param_key}:String}}"
                 params[param_key] = str(v)
 
+        if min_value is not None:
+            from_where += " AND value >= {min_value:Float64}"
+            params["min_value"] = float(min_value)
+
         if resolution_minutes is not None:
             return self._resampled_query(schema, from_where, resolution_minutes), {
                 **params,
@@ -662,8 +667,9 @@ class ClickHouseClient(BaseStorageClient):
     ) -> str:
         """Build the query of a series averaged in buckets of ``resolution_minutes``.
 
-        A bucket starts at the ``start`` of the query and lasts the resolution, so the
-        first one is always whole and the last may be shorter. ``FINAL`` leaves one
+        The buckets follow the UTC calendar (an hour or a day in UTC, whatever the
+        ``start`` of the query), so the first and the last may have fewer points than
+        the others: only the ones inside the range are averaged. ``FINAL`` leaves one
         version of each point (the sort key has no ``valid``, ``zone_status``,
         ``data_state`` or ``datasource``), which is what ``filter_best_metrics`` would
         find, and the values of the bucket are averaged. The points with a different
@@ -674,11 +680,10 @@ class ClickHouseClient(BaseStorageClient):
         cols = [c for c, _ in schema]
         labels = [c for c in cols if c not in _NOT_LABELS]
         bucket = (
-            "toDateTime({start:String}) + intDiv("
-            "toUnixTimestamp(timestamp) - toUnixTimestamp(toDateTime({start:String})), "
-            "{bucket_seconds:UInt32}) * {bucket_seconds:UInt32}"
+            "toDateTime(intDiv(toUnixTimestamp(timestamp), {bucket_seconds:UInt32})"
+            " * {bucket_seconds:UInt32}, 'UTC')"
         )
-        select = [f"{bucket} AS bucket_start", "avg(value) AS value", *labels]
+        select = [f"{bucket} AS bucket_start", "avg(value) AS mean_value", *labels]
         if "valid" in cols:
             select.append("if(countIf(valid != 'true') = 0, 'true', 'false') AS valid")
         if "zone_status" in cols:
@@ -869,7 +874,12 @@ class ClickHouseClient(BaseStorageClient):
                 f"got {resolution}"
             )
         sql, query_params = self._build_query(
-            metric_name, start, end, labels, resolution
+            metric_name,
+            start,
+            end,
+            labels,
+            resolution,
+            (params or {}).get("min_value"),
         )
 
         try:

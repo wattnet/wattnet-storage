@@ -264,10 +264,11 @@ A service that only reads does not need the spec: `query_metrics("zone_price", .
 
 A long range at the interval of the series is a lot of rows. `query_metrics(..., resolution_minutes=60)` returns the series averaged in buckets of that many minutes (a multiple of the interval of the series), and ClickHouse does the average, so far fewer rows travel. Without it the series comes as stored.
 
-- A bucket starts at the `start` of the query and lasts the resolution, so the first one is whole and the last one may be shorter. Its metric has the start of the bucket as `timestamp`.
+- The buckets follow the UTC calendar: with `resolution_minutes=60` they are the hours in UTC and with `1440` the days in UTC, whatever the `start` of the query. A query from 13:22 to 16:32 (read from 13:15 to 16:45, the range is aligned to the interval of the series) gives the buckets 13:00, 14:00, 15:00 and 16:00; the first and the last average only the points inside the range. Its metric has the start of the bucket as `timestamp`.
 - The series with different labels (another `datasource`, a `production_type`...) stay apart, as they do unaveraged.
 - `valid` of a bucket is `true` only if all its points are, `zone_status` is the worst of them (`missing`, then `preview`, then `complete`) and `updated_at` the latest.
 - A table that has no `valid` or `zone_status` (the factors) has none in its buckets.
+- `min_value=0` (it also works without a resolution) leaves out the values below it in the query, so with a resolution it is the average of the values that stay, and a bucket with none does not appear.
 - An average of rates and intensities is meaningful (power, footprints); an average of shares or of a value per year is not what the caller may want, so choose it with the metric in mind.
 
 #### Health check

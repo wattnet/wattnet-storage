@@ -109,14 +109,34 @@ def test_series_with_other_labels_stay_apart(ch_client) -> None:
     }
 
 
-def test_the_buckets_start_at_the_start_of_the_query(ch_client) -> None:
-    """A query that starts at 00:30 has buckets from 00:30, and the last may be short."""
+def test_the_buckets_follow_the_utc_calendar_whatever_the_start(ch_client) -> None:
+    """A query that starts at 00:30 has the buckets of 00:00 and 01:00."""
     _write(ch_client, [_load(15 * i, float(i)) for i in range(8)])
-    start = T0 + timedelta(minutes=30)
-    out = _read(ch_client, 60, start=start, end=T0 + timedelta(hours=2))
+    out = _read(
+        ch_client, 60, start=T0 + timedelta(minutes=30), end=T0 + timedelta(hours=2)
+    )
     assert [(m.timestamp, m.value) for m in out] == [
-        (start, 3.5),  # 00:30 .. 01:15
-        (start + timedelta(hours=1), 6.5),  # 01:30 .. 01:45
+        (T0, 2.5),  # only 00:30 and 00:45 are in the range
+        (T0 + timedelta(hours=1), 5.5),  # 01:00 .. 01:45
+    ]
+
+
+def test_a_day_is_a_day_in_utc(ch_client) -> None:
+    """With a day as resolution the buckets start at 00:00 UTC."""
+    _write(
+        ch_client,
+        [_load(60 * 20, 10.0), _load(60 * 23, 30.0), _load(60 * 25, 100.0)],
+    )
+    out = ch_client.read_metrics(
+        "zone_load",
+        T0 + timedelta(hours=13, minutes=22),
+        T0 + timedelta(hours=40),
+        {"zone": "ES"},
+        params={"resolution_minutes": 1440},
+    )
+    assert [(m.timestamp, m.value) for m in out] == [
+        (T0, 20.0),
+        (T0 + timedelta(days=1), 100.0),
     ]
 
 
@@ -145,6 +165,34 @@ def test_a_table_without_valid_or_zone_status_can_be_resampled(ch_client) -> Non
     )
     assert [(m.value, m.metadata["production_type"]) for m in out] == [(2.0, "gas")]
     assert "valid" not in out[0].metadata
+
+
+def test_min_value_leaves_out_the_negatives_before_the_average(ch_client) -> None:
+    """The average of the values that stay, and nothing if none stays."""
+    _write(
+        ch_client,
+        [
+            _load(0, 10.0),
+            _load(15, -50.0),
+            _load(30, 30.0),
+            _load(45, 50.0),
+            _load(60, -5.0),
+            _load(75, -6.0),
+        ],
+    )
+    params = {"resolution_minutes": 60, "min_value": 0}
+    out = ch_client.read_metrics(
+        "zone_load", T0, T0 + timedelta(hours=2), {"zone": "ES"}, params=params
+    )
+    assert [(m.timestamp, m.value) for m in out] == [(T0, 30.0)]
+    raw = ch_client.read_metrics(
+        "zone_load",
+        T0,
+        T0 + timedelta(hours=2),
+        {"zone": "ES"},
+        params={"min_value": 0},
+    )
+    assert sorted(m.value for m in raw) == [10.0, 30.0, 50.0]
 
 
 @pytest.mark.parametrize("bad", [0, -15, 10, 20])

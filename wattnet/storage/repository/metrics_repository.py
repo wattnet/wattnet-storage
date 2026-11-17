@@ -29,6 +29,7 @@ class MetricsRepository:
         end: Optional[datetime] = None,
         labels: Optional[dict] = None,
         resolution_minutes: Optional[int] = None,
+        min_value: Optional[float] = None,
     ) -> List[Metric]:
         """Query metrics from storage.
 
@@ -38,16 +39,27 @@ class MetricsRepository:
         :param labels: Optional labels to filter metrics
         :param resolution_minutes: Optional bucket, in minutes, to get the series
             averaged instead of one metric per interval (a multiple of the interval of
-            the series). Each bucket is one metric: its timestamp is the start of the
-            bucket, its ``valid`` is true only if all its points are valid, its
-            ``zone_status`` is the worst of them and its ``updated_at`` the latest.
-            The best version of each point is chosen before averaging. By default the
-            series comes as it is stored.
+            the series). Each bucket is one metric, and the buckets follow the UTC
+            calendar (hours and days in UTC), so the first and the last may have fewer
+            points than the others. Its timestamp is the start of the bucket, its
+            ``valid`` is true only if all its points are valid, its ``zone_status`` is
+            the worst of them and its ``updated_at`` the latest. The best version of
+            each point is chosen before averaging. By default the series comes as it
+            is stored.
+        :param min_value: Optional lower bound: the values below it are left out. With
+            a resolution they are left out before the average, so it is the average of
+            the values that stay.
         :return: List of Metric objects
         """
-        extra = {}
-        if resolution_minutes is not None:
-            extra["params"] = {"resolution_minutes": resolution_minutes}
+        query_params = {
+            name: value
+            for name, value in (
+                ("resolution_minutes", resolution_minutes),
+                ("min_value", min_value),
+            )
+            if value is not None
+        }
+        extra = {"params": query_params} if query_params else {}
         metrics: List[Metric] = self.storage_manager.read_metrics(
             metric_name=metric_name,
             start=start,

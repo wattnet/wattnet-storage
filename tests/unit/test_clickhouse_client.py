@@ -335,6 +335,90 @@ class TestBuildQuery:
         assert "FINAL" in sql
 
 
+class TestResampledQuery:
+    START = datetime(2024, 1, 1, 0, 0)
+    END = datetime(2024, 1, 2, 0, 0)
+
+    def test_without_resolution_the_query_is_the_one_of_always(self, ch):
+        sql, params = ch._build_query("zone_load", self.START, self.END)
+        assert sql.startswith("SELECT * FROM test.zone_load FINAL WHERE")
+        assert sql.endswith("ORDER BY timestamp ASC")
+        assert "bucket_seconds" not in params
+
+    def test_the_series_is_averaged_in_buckets_of_the_utc_calendar(self, ch):
+        sql, params = ch._build_query(
+            "zone_load", self.START, self.END, {"zone": "ES"}, resolution_minutes=60
+        )
+        assert params["bucket_seconds"] == 3600
+        assert "avg(value) AS mean_value" in sql
+        assert "FINAL" in sql and "SELECT *" not in sql
+        assert "zone = {label_zone:String}" in sql
+        # the first column is the start of the bucket, aligned to the epoch (UTC)
+        assert sql.startswith(
+            "SELECT toDateTime(intDiv(toUnixTimestamp(timestamp), "
+            "{bucket_seconds:UInt32}) * {bucket_seconds:UInt32}, 'UTC') AS bucket_start"
+        )
+        # the labels of the series stay apart, valid and zone_status are summarised
+        assert (
+            "GROUP BY bucket_start, data_state, datasource, unit, zone"
+            " ORDER BY bucket_start ASC"
+        ) in sql
+        assert "if(countIf(valid != 'true') = 0, 'true', 'false') AS valid" in sql
+        assert "argMin(zone_status, multiIf(" in sql
+        assert "max(updated_at) AS updated_at" in sql
+
+    def test_a_table_without_valid_or_zone_status_has_neither(self, ch):
+        sql, _ = ch._build_query(
+            "factor", self.START, self.END, resolution_minutes=1440
+        )
+        assert "valid" not in sql and "zone_status" not in sql
+        assert "max(updated_at) AS updated_at" in sql
+        assert "GROUP BY bucket_start, factor_type, production_type" in sql
+
+    def test_min_value_leaves_out_the_rows_below_it_before_the_average(self, ch):
+        sql, params = ch._build_query(
+            "zone_load", self.START, self.END, resolution_minutes=60, min_value=0
+        )
+        assert "AND value >= {min_value:Float64} GROUP BY" in sql
+        assert params["min_value"] == 0.0
+        plain, plain_params = ch._build_query(
+            "zone_load", self.START, self.END, min_value=0
+        )
+        assert plain.endswith("AND value >= {min_value:Float64} ORDER BY timestamp ASC")
+        assert plain_params["min_value"] == 0.0
+
+    def test_read_metrics_takes_min_value_from_the_params(self, ch, mock_ch_connect):
+        import pandas as pd
+
+        mock_ch_connect.query_df.return_value = pd.DataFrame()
+        ch.read_metrics("zone_load", self.START, self.END, params={"min_value": 0})
+        call = mock_ch_connect.query_df.call_args
+        assert "value >= {min_value:Float64}" in call.args[0]
+        assert call.kwargs["parameters"]["min_value"] == 0.0
+
+    def test_read_metrics_asks_the_resampled_query(self, ch, mock_ch_connect):
+        import pandas as pd
+
+        mock_ch_connect.query_df.return_value = pd.DataFrame()
+        ch.read_metrics(
+            "zone_load", self.START, self.END, params={"resolution_minutes": 60}
+        )
+        sql = mock_ch_connect.query_df.call_args.args[0]
+        assert "avg(value)" in sql
+        assert mock_ch_connect.query_df.call_args.kwargs["parameters"][
+            "bucket_seconds"
+        ] == 3600
+
+    @pytest.mark.parametrize("bad", [0, -15, 10, 20])
+    def test_a_resolution_that_is_not_a_multiple_of_the_interval_is_refused(
+        self, ch, bad
+    ):
+        with pytest.raises(ValueError):
+            ch.read_metrics(
+                "zone_load", self.START, self.END, params={"resolution_minutes": bad}
+            )
+
+
 # ---------------------------------------------------------------------------
 # _build_row
 # ---------------------------------------------------------------------------

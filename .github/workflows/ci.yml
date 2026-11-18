@@ -42,7 +42,7 @@ jobs:
           restore-keys: poetry-${{ matrix.python-version }}-
 
       - name: Install tox
-        run: pip install tox tox-gh-actions poetry==2.2.1
+        run: pip install "tox<4.67.14" tox-gh-actions poetry==2.2.1
 
       - name: Run tox
         run: tox

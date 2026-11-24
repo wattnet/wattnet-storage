@@ -1,3 +1,5 @@
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -612,8 +614,42 @@ class TestFailedFlushKeepsRows:
         idle.write_metrics(self._metrics(4))
         with patch.object(idle, "_flush_table", side_effect=RuntimeError("down")):
             idle._flush_all()
-        idle.flush()
+        assert idle.flush() == 4
         assert "4 buffered rows lost" in caplog.text
+
+    def test_shutdown_returns_zero_when_everything_was_sent(self, idle):
+        idle.write_metrics(self._metrics(4))
+        with patch.object(idle, "_flush_table"):
+            idle._flush_all()
+        assert idle.flush() == 0
+
+    def test_shutdown_waits_for_a_slow_last_drain(self, ch):
+        ch.write_metrics(self._metrics(4))
+        sent = []
+
+        def slow(table_name, rows):
+            time.sleep(0.3)
+            sent.extend(rows)
+
+        with patch.object(ch, "_flush_table", side_effect=slow):
+            assert ch.flush() == 0
+        assert len(sent) == 4
+
+    def test_shutdown_counts_the_rows_of_a_drain_that_does_not_end(self, ch, caplog):
+        ch.write_metrics(self._metrics(4))
+        release = threading.Event()
+
+        def stuck(table_name, rows):
+            release.wait(timeout=5)
+
+        with (
+            patch.object(ClickHouseClient, "_SHUTDOWN_TIMEOUT_SECONDS", 0.2),
+            patch.object(ch, "_flush_table", side_effect=stuck),
+        ):
+            assert ch.flush() == 4
+            release.set()
+            ch._flush_thread.join(timeout=2)
+        assert "did not confirm the last flush" in caplog.text
 
 
 # ---------------------------------------------------------------------------

@@ -281,6 +281,9 @@ class ClickHouseClient(BaseStorageClient):
     # flush. Past this many rows per table the oldest are dropped, so an outage
     # that lasts too long cannot exhaust the memory of the process.
     _MAX_BUFFERED_ROWS = 200_000
+    # What flush() waits for the last drain: it sends one batch per table, one after
+    # the other, and a replicated cluster can take well over the 10 s of before.
+    _SHUTDOWN_TIMEOUT_SECONDS = 60
 
     def __init__(self, config: StorageConfig):
         """Initialize the ClickHouse client with a StorageConfig."""
@@ -358,6 +361,8 @@ class ClickHouseClient(BaseStorageClient):
         # True while ClickHouse is failing: writers stop flushing by themselves
         # (each try would block them) and leave the retries to the flush thread.
         self._flush_failing = False
+        # Rows the flush thread has taken out of the buffer and has not sent yet.
+        self._inflight_rows = 0
 
         # 4. Flush thread — a permanent daemon thread is more stable than
         # chained Timers for long-running services (no drift, no overlaps).
@@ -717,11 +722,14 @@ class ClickHouseClient(BaseStorageClient):
         with self._buffer_lock:
             snapshot = dict(self._buffer)
             self._buffer.clear()
+            self._inflight_rows = sum(len(rows) for rows in snapshot.values())
 
         for table_name, rows in snapshot.items():
             if rows:
                 LOG.debug("Flushing %d rows to table '%s'", len(rows), table_name)
                 self._flush_or_requeue(table_name, rows)
+            with self._buffer_lock:
+                self._inflight_rows -= len(rows)
 
     def _flush_or_requeue(self, table_name: str, rows: list) -> None:
         """Insert a batch; if it fails, put it back in the buffer for the next flush.
@@ -831,19 +839,34 @@ class ClickHouseClient(BaseStorageClient):
         for table_name, rows in flush_batches:
             self._flush_or_requeue(table_name, rows)
 
-    def flush(self) -> None:
+    def flush(self) -> int:
         """Force an immediate flush and stop the background flush thread.
 
         Call this on graceful shutdown to avoid losing buffered rows.
         After calling flush() the client should not be used anymore.
+
+        Returns the number of rows that ClickHouse did not confirm: the ones that
+        stayed in the buffer because the last drain failed, and the ones of a drain
+        that was still running when the wait (_SHUTDOWN_TIMEOUT_SECONDS) ended. A
+        caller that must not lose rows can fail on a number above zero.
         """
         LOG.info("Graceful shutdown: flushing buffer and stopping flush thread")
         self._stop_event.set()
-        self._flush_thread.join(timeout=10)
-        lost = sum(len(rows) for rows in self._buffer.values())
-        if lost:
+        self._flush_thread.join(timeout=self._SHUTDOWN_TIMEOUT_SECONDS)
+        with self._buffer_lock:
+            lost = sum(len(rows) for rows in self._buffer.values())
+            inflight = self._inflight_rows
+        if self._flush_thread.is_alive():
+            lost += inflight
+            LOG.error(
+                "ClickHouse did not confirm the last flush in %ds: %d rows not sent",
+                self._SHUTDOWN_TIMEOUT_SECONDS,
+                lost,
+            )
+        elif lost:
             LOG.error("ClickHouse unreachable at shutdown: %d buffered rows lost", lost)
         LOG.info("Flush thread stopped")
+        return lost
 
     # ------------------------------------------------------------------
     # READ — Arrow/DataFrame path for fast deserialization

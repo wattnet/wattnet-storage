@@ -208,7 +208,7 @@ results = repo.query_metrics(
 
 If ClickHouse cannot be reached (a restart, a network cut, a switch to another replica), no rows are lost: the failed batch goes back to the buffer and is sent again on the next attempt, ahead of the newer rows, over a new connection. Sending a batch twice is harmless, because ClickHouse keeps one row per data point. While ClickHouse keeps failing, callers of `write_metrics` are never blocked by it. The buffer keeps at most 200,000 rows per table; in an outage long enough to fill it, the oldest rows are dropped and an error is logged.
 
-Call `flush()` on the storage client when the application stops, so the rows still in the buffer are sent. If ClickHouse is down at that moment, the number of rows lost is logged.
+Call `flush()` on the storage client when the application stops, so the rows still in the buffer are sent. It waits up to 60 seconds for the last batches (they go one table after the other) and returns the number of rows that ClickHouse did not confirm, which is also logged: the ones that stayed in the buffer because ClickHouse could not be reached, and the ones of a batch that was still being sent when the wait ended. An application that must not lose rows can fail when the number is above zero.
 
 #### Supported metric types
 

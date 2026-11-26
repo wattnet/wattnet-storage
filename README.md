@@ -271,6 +271,10 @@ A long range at the interval of the series is a lot of rows. `query_metrics(...,
 - `min_value=0` (it also works without a resolution) leaves out the values below it in the query, so with a resolution it is the average of the values that stay, and a bucket with none does not appear.
 - An average of rates and intensities is meaningful (power, footprints); an average of shares or of a value per year is not what the caller may want, so choose it with the metric in mind.
 
+#### Where a series stops
+
+`repo.latest_timestamp("zone_import", before, labels={"zone": "IT_CNORTH", "from": "IT_SARDINIA", "data_state": "official"})` returns the timestamp of the latest point of the series strictly before `before`, or `None` if there is none. It is one query (`max(timestamp)` over the newest version of each point), so a reader finds where the data stops (for example, the last official point before a gap of estimates) without reading the series back window by window. The labels filter on any column of the table, and `after=` bounds the search from below so ClickHouse only reads that range.
+
 #### Health check
 
 `repo.ping()` returns `True` when every storage backend answers, for the health endpoint of a service.

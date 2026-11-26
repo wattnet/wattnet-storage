@@ -61,3 +61,15 @@ class BaseStorageClient(metaclass=ABCMeta):
     def ping(self) -> bool:
         """Return True if the backend answers."""
         raise NotImplementedError(f"{type(self).__name__} does not support ping")
+
+    def latest_timestamp(
+        self,
+        metric_name: str,
+        before: datetime,
+        labels: dict | None = None,
+        after: datetime | None = None,
+    ) -> datetime | None:
+        """Return the timestamp of the latest point before *before*, or None."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support latest_timestamp"
+        )

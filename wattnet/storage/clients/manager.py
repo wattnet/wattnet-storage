@@ -102,3 +102,19 @@ class StorageClientsManager:
     def ping(self) -> bool:
         """Return True if every storage client answers."""
         return all(client.ping() for client in self.storage_clients.values())
+
+    def latest_timestamp(
+        self,
+        metric_name: str,
+        before: datetime,
+        labels: dict | None = None,
+        after: datetime | None = None,
+    ) -> datetime | None:
+        """Return the latest timestamp before *before* among all clients, or None."""
+        found = [
+            ts
+            for client in self.storage_clients.values()
+            if (ts := client.latest_timestamp(metric_name, before, labels, after))
+            is not None
+        ]
+        return max(found, default=None)

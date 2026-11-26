@@ -420,3 +420,47 @@ class TestDeclaredMetrics:
         ).result_rows
         root.close()
         assert ("market",) in cols
+
+
+class TestLatestTimestamp:
+    def test_latest_official_point_before_a_gap(self, ch_client):
+        """The last official point is found across a stretch of estimated ones."""
+        official = [
+            Metric(
+                MetricType.ZONE_IMPORT,
+                10.0,
+                timestamp=TS + timedelta(minutes=15 * i),
+                metadata={"zone": "IT_CNORTH", "from": "IT_SARDINIA", "data_state": "official"},
+            )
+            for i in range(3)
+        ]
+        estimated = [
+            Metric(
+                MetricType.ZONE_IMPORT,
+                1.0,
+                timestamp=TS + timedelta(days=20, minutes=15 * i),
+                metadata={"zone": "IT_CNORTH", "from": "IT_SARDINIA", "data_state": "estimated"},
+            )
+            for i in range(3)
+        ]
+        ch_client.write_metrics(official + estimated)
+        ch_client._flush_all()
+        time.sleep(0.5)
+        labels = {"zone": "IT_CNORTH", "from": "IT_SARDINIA"}
+        before = TS + timedelta(days=30)
+        assert ch_client.latest_timestamp(
+            "zone_import", before, {**labels, "data_state": "official"}
+        ) == TS + timedelta(minutes=30)
+        assert ch_client.latest_timestamp("zone_import", before, labels) == TS + timedelta(
+            days=20, minutes=30
+        )
+        # Strictly before, and nothing in a range with no point.
+        assert ch_client.latest_timestamp(
+            "zone_import", TS + timedelta(minutes=30), labels
+        ) == TS + timedelta(minutes=15)
+        assert (
+            ch_client.latest_timestamp(
+                "zone_import", before, labels, after=TS + timedelta(days=25)
+            )
+            is None
+        )

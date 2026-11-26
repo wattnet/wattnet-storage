@@ -71,6 +71,28 @@ class MetricsRepository:
             return metrics  # the query already chose the best version of each point
         return filter_best_metrics(metrics)
 
+    def latest_timestamp(
+        self,
+        metric_name: str,
+        before: datetime,
+        labels: Optional[dict] = None,
+        after: Optional[datetime] = None,
+    ) -> Optional[datetime]:
+        """Return the timestamp of the latest point of a series before a moment.
+
+        It answers with one query, so a reader can find where the data of a series
+        stops (for example, the last official point before a gap) without reading
+        the series back window after window.
+
+        :param metric_name: Name of the metric (a MetricType value or a declared metric)
+        :param before: Only points strictly before this moment count
+        :param labels: Optional labels to filter the points (any column of the table,
+            for example ``{"zone": "ES", "data_state": "official"}``)
+        :param after: Optional lower bound of the search, to keep it to a range
+        :return: The timestamp (UTC), or None if the series has no point in the range
+        """
+        return self.storage_manager.latest_timestamp(metric_name, before, labels, after)
+
     def write_metrics(self, metrics: List[Metric]) -> None:
         """Write a list of Metric objects to the storage backend.
 

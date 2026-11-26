@@ -252,6 +252,8 @@ COLUMN_NAME_MAP = {
 
 REVERSE_COLUMN_NAME_MAP = {v: k for k, v in COLUMN_NAME_MAP.items()}
 
+_LATEST_TEMPLATE = "SELECT max(timestamp), count() FROM {table} FINAL"
+
 _METRIC_FROM_TEMPLATE = (
     " FROM {table} FINAL"
     " WHERE timestamp >= toDateTime({start:String})"
@@ -645,15 +647,7 @@ class ClickHouseClient(BaseStorageClient):
             "{table}", self.database + "." + metric_name
         )
 
-        if labels:
-            valid_cols = {c[0] for c in schema}
-            for k, v in labels.items():
-                mapped_k = COLUMN_NAME_MAP.get(k, k)
-                if mapped_k not in valid_cols:
-                    continue
-                param_key = f"label_{mapped_k}"
-                from_where += f" AND {mapped_k} = {{{param_key}:String}}"
-                params[param_key] = str(v)
+        from_where += self._label_filters(schema, labels, params)
 
         if min_value is not None:
             from_where += " AND value >= {min_value:Float64}"
@@ -665,6 +659,28 @@ class ClickHouseClient(BaseStorageClient):
                 "bucket_seconds": resolution_minutes * 60,
             }
         return "SELECT *" + from_where + " ORDER BY timestamp ASC", params
+
+    @staticmethod
+    def _label_filters(
+        schema: list[tuple[str, str]], labels: dict | None, params: dict[str, Any]
+    ) -> str:
+        """Return the ``AND column = value`` conditions of *labels*.
+
+        Their values are added to *params*. Labels that are not a column of the table
+        are ignored.
+        """
+        if not labels:
+            return ""
+        valid_cols = {c[0] for c in schema}
+        sql = ""
+        for k, v in labels.items():
+            mapped_k = COLUMN_NAME_MAP.get(k, k)
+            if mapped_k not in valid_cols:
+                continue
+            param_key = f"label_{mapped_k}"
+            sql += f" AND {mapped_k} = {{{param_key}:String}}"
+            params[param_key] = str(v)
+        return sql
 
     @staticmethod
     def _resampled_query(
@@ -918,6 +934,44 @@ class ClickHouseClient(BaseStorageClient):
             return []
 
         return self._to_metrics(metric_name, df)
+
+    def latest_timestamp(
+        self,
+        metric_name: str,
+        before: datetime,
+        labels: dict | None = None,
+        after: datetime | None = None,
+    ) -> datetime | None:
+        """Return the timestamp of the latest point of *metric_name* before *before*.
+
+        One ``max(timestamp)`` over the best version of each point (``FINAL``), with
+        the same label filters as ``read_metrics``. *after*, when given, bounds the
+        search from below, so ClickHouse only reads that range of the table.
+
+        :return: The timestamp (UTC), or None if there is no point in the range
+        """
+        schema = self._schema(metric_name)
+        params: dict[str, Any] = {"before": before.strftime("%Y-%m-%d %H:%M:%S")}
+        where = " WHERE timestamp < toDateTime({before:String})"
+        if after is not None:
+            params["after"] = after.strftime("%Y-%m-%d %H:%M:%S")
+            where += " AND timestamp >= toDateTime({after:String})"
+        where += self._label_filters(schema, labels, params)
+        # The table name comes from _schema, which only knows real tables.
+        sql = _LATEST_TEMPLATE.replace("{table}", self.database + "." + metric_name)
+        sql += where
+
+        try:
+            rows = self._get_client().query(sql, parameters=params).result_rows
+        except OperationalError as e:
+            LOG.warning("ClickHouse read failed, retrying once: %s", e)
+            self._drop_client()
+            rows = self._get_client().query(sql, parameters=params).result_rows
+
+        latest, count = rows[0]
+        if not count:
+            return None
+        return cast(datetime, latest).replace(tzinfo=timezone.utc)
 
     @staticmethod
     def _column_values(series: Any, convert: Any = None) -> list:
